@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:00:03 pm                                       *
+ * Last Modified: 2023-02-27 05:35:20 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -30,7 +30,7 @@ trait DecoderParams{
   def nDataBit: Int
   def nInstrBit: Int = 32
 
-  def useCeps: Boolean
+  def useChamp: Boolean
   def useExtM: Boolean
   def useExtA: Boolean
   def useExtB: Boolean
@@ -44,7 +44,7 @@ case class DecoderConfig (
   nAddrBit: Int,
   nDataBit: Int,
 
-  useCeps: Boolean,
+  useChamp: Boolean,
   useExtM: Boolean,
   useExtA: Boolean,
   useExtB: Boolean,
@@ -88,10 +88,10 @@ trait BackParams extends GprParams
   def nDataBit: Int
   def nDataByte: Int = (nDataBit / 8).toInt
 
-  def useCeps: Boolean
+  def useChamp: Boolean
   def nDome: Int
   def nPart: Int
-  def nCepsTrapLvl: Int
+  def nChampTrapLvl: Int
 
   def nBackPort: Int = 1
   def useExtM: Boolean
@@ -129,7 +129,7 @@ trait BackParams extends GprParams
     useAmo = useExtA,
     nDataByte = nDataByte,
     
-    useDome = useCeps,
+    useDome = useChamp,
     nDome = nDome,
     multiDome = false
   )
@@ -141,10 +141,10 @@ case class BackConfig (
   nAddrBit: Int,
   nDataBit: Int,
   
-  useCeps: Boolean,
+  useChamp: Boolean,
   nDome: Int,
   nPart: Int,
-  nCepsTrapLvl: Int,
+  nChampTrapLvl: Int,
 
   useExtM: Boolean,
   useExtA: Boolean,

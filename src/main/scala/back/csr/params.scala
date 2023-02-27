@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:24 pm                                       *
+ * Last Modified: 2023-02-27 05:30:34 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -28,12 +28,12 @@ trait CsrParams extends GenParams {
   def nAddrBit: Int
   def nDataBit: Int
 
-  def useCeps: Boolean
-  def useDome: Boolean = useCeps
+  def useChamp: Boolean
+  def useDome: Boolean = useChamp
   def nDome: Int
   def multiDome: Boolean = false
   def nPart: Int
-  def nCepsTrapLvl: Int
+  def nChampTrapLvl: Int
 }
 
 case class CsrConfig (
@@ -42,8 +42,8 @@ case class CsrConfig (
   nAddrBit: Int,
   nDataBit: Int,
   
-  useCeps: Boolean,
+  useChamp: Boolean,
   nDome: Int,
   nPart: Int,
-  nCepsTrapLvl: Int
+  nChampTrapLvl: Int
 ) extends CsrParams

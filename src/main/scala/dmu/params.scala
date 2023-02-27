@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:36 pm                                       *
+ * Last Modified: 2023-02-27 05:56:19 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.dome._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 import herd.common.mem.mb4s._
 
 
@@ -32,15 +32,15 @@ trait DmuParams extends GenParams  {
   def nDataBit: Int
   def nDataByte: Int = (nDataBit / 8).toInt
   
-  def useCeps: Boolean
-  def useDome: Boolean = useCeps
+  def useChamp: Boolean
+  def useDome: Boolean = useChamp
   def multiDome: Boolean = false
-  def useCepsExtR: Boolean = false
-  def useCepsExtMie: Boolean
-  def useCepsExtFr: Boolean
-  def useCepsExtCst: Boolean
-  def nCepsTrapLvl: Int
-  def nDome: Int = if (useCepsExtFr) 2 else 1
+  def useChampExtR: Boolean = false
+  def useChampExtMie: Boolean
+  def useChampExtFr: Boolean
+  def useChampExtCst: Boolean
+  def nChampTrapLvl: Int
+  def nDome: Int = if (useChampExtFr) 2 else 1
   def nPart: Int
   def nDomeFlushCycle: Int
   def nDomeField: Int = 6
@@ -51,9 +51,9 @@ trait DmuParams extends GenParams  {
 
   def pDomeCfg: DomeCfgParams = new DomeCfgConfig (
     nDataBit = nDataBit,
-    nTrapLvl = nCepsTrapLvl,
-    useRange = useCepsExtR,
-    useFr = useCepsExtFr
+    nTrapLvl = nChampTrapLvl,
+    useRange = useChampExtR,
+    useFr = useChampExtFr
   )
 
   def pL0DBus: Mb4sParams = new Mb4sConfig (
@@ -64,7 +64,7 @@ trait DmuParams extends GenParams  {
     useAmo = false,
     nDataByte = nDataByte,
     
-    useDome = useCeps,
+    useDome = useChamp,
     nDome = nDome,
     multiDome = false
   )
@@ -76,11 +76,11 @@ case class DmuConfig (
   nHart: Int,
   nAddrBit: Int,
   nDataBit: Int,
-  useCeps: Boolean,
-  useCepsExtMie: Boolean,
-  useCepsExtFr: Boolean,
-  useCepsExtCst: Boolean,
-  nCepsTrapLvl: Int,
+  useChamp: Boolean,
+  useChampExtMie: Boolean,
+  useChampExtFr: Boolean,
+  useChampExtCst: Boolean,
+  nChampTrapLvl: Int,
   nPart: Int,
   nDomeFlushCycle: Int,
 

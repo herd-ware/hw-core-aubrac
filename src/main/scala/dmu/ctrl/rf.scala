@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:00:20 pm                                       *
+ * Last Modified: 2023-02-27 05:57:50 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -18,7 +18,7 @@ package herd.core.aubrac.dmu
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 
 
 class RegFile (p: DmuParams) extends Module {
@@ -46,7 +46,7 @@ class RegFile (p: DmuParams) extends Module {
   init_reg.dc(0).status.atl(0)    := false.B
   init_reg.dc(0).status.atl(1)    := false.B
 
-  if (p.useCepsExtR) {
+  if (p.useChampExtR) {
     init_reg.dc(0).status.order   := (p.nDataBit / log2Ceil(p.nDataBit)).U
   } else {
     init_reg.dc(0).status.order   := 0.U
@@ -63,7 +63,7 @@ class RegFile (p: DmuParams) extends Module {
   for (tl <- 0 until CST.MAXTL) {
     init_reg.dc(0).cap.featl(tl)  := (tl < p.pDomeCfg.nTrapLvl).B    
   }
-  init_reg.dc(0).cap.feafr        := p.useCepsExtFr.B
+  init_reg.dc(0).cap.feafr        := p.useChampExtFr.B
   init_reg.dc(0).cap.feacbo       := true.B
 
   init_reg.dc(0).inst.weight      := WEIGHT.FULL.U
@@ -111,8 +111,8 @@ class RegFile (p: DmuParams) extends Module {
       r_reg.dc(r_reg.cdc).status.valid := (io.b_write.sw === SWUOP.V) | (io.b_write.sw === SWUOP.L)
       r_reg.dc(r_reg.cdc).status.lock := (io.b_write.sw === SWUOP.L)
       r_reg.dc(r_reg.cdc).status.update := false.B
-      if (p.nCepsTrapLvl > 0) r_reg.dc(r_reg.cdc).status.atl(0) := io.i_atl(0)
-      if (p.nCepsTrapLvl > 1) r_reg.dc(r_reg.cdc).status.atl(1) := io.i_atl(1)
+      if (p.nChampTrapLvl > 0) r_reg.dc(r_reg.cdc).status.atl(0) := io.i_atl(0)
+      if (p.nChampTrapLvl > 1) r_reg.dc(r_reg.cdc).status.atl(1) := io.i_atl(1)
 
       r_reg.dc(io.b_write.addr).status.valid := true.B
       r_reg.dc(io.b_write.addr).status.lock := true.B
@@ -125,7 +125,7 @@ class RegFile (p: DmuParams) extends Module {
       when (io.b_write.full) {
         r_reg.dc(io.b_write.addr) := io.b_write.data
       }.otherwise {
-        switch (io.b_write.field) {
+        switch (io.b_write.index) {
           is(CONF.STATUS.U) {r_reg.dc(io.b_write.addr).status := io.b_write.data.status}
           is(CONF.ID.U)     {r_reg.dc(io.b_write.addr).id     := io.b_write.data.id}
           is(CONF.ENTRY.U)  {r_reg.dc(io.b_write.addr).entry  := io.b_write.data.entry}
@@ -182,7 +182,7 @@ class Bypass(p: DmuParams) extends Module {
 
     for (b <- 0 until p.nBypass) {
       when (io.i_byp(b).valid & (io.i_byp(b).addr === io.b_dcs(r).addr) & (io.b_dcs(r).addr =/= io.i_cdc)) { 
-        io.b_dcs(r).ready := io.i_byp(b).ready & ((io.b_dcs(r).full & io.i_byp(b).full) | (~io.b_dcs(r).full & (io.i_byp(b).full | (io.b_dcs(r).field =/= io.i_byp(b).field))))
+        io.b_dcs(r).ready := io.i_byp(b).ready & ((io.b_dcs(r).full & io.i_byp(b).full) | (~io.b_dcs(r).full & (io.i_byp(b).full | (io.b_dcs(r).index =/= io.i_byp(b).index))))
         io.b_dcs(r).data := io.i_byp(b).data
       }
     }

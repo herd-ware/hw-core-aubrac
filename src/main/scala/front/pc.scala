@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:04:07 pm                                       *
+ * Last Modified: 2023-02-27 05:38:34 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.dome._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 import herd.core.aubrac.common._
 import herd.core.aubrac.nlp.{NlpReadIO}
 

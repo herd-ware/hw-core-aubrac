@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:00:16 pm                                       *
+ * Last Modified: 2023-02-27 05:57:44 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -21,7 +21,7 @@ import chisel3.experimental.ChiselEnum
 import scala.math._
 
 import herd.common.gen._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 import herd.common.tools.Counter
 import herd.common.mem.mb4s._
 import herd.common.mem.mb4s.{OP => MEMOP}
@@ -73,13 +73,13 @@ class CtrlStage(p: DmuParams) extends Module {
   //         CONTROL & DATA
   // ******************************
   val w_full = Wire(Bool())
-  val w_field = Wire(UInt(7.W))
+  val w_index = Wire(UInt(7.W))
   val w_dcres = Wire(new DomeCfgBus(p.pDomeCfg))
   val w_dcres_lock = Wire(Bool())
   val w_res = Wire(UInt(p.nDataBit.W))
 
   w_full := io.b_in.ctrl.get.info.full
-  w_field := io.b_in.data.get.s3
+  w_index := io.b_in.data.get.s3
   w_dcres := io.b_in.data.get.dcres
   w_dcres_lock := io.b_in.ctrl.get.info.lock
   w_res := Mux(w_is_switch, ~io.b_in.data.get.dcres.status.valid, io.b_in.data.get.res)
@@ -195,7 +195,7 @@ class CtrlStage(p: DmuParams) extends Module {
     is (0.U) {
       io.b_dmem.write.data := io.b_in.data.get.dcres.status.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
-        w_field := CONF.STATUS.U
+        w_index := CONF.STATUS.U
         w_dcres.status.fromUInt(io.b_dmem.read.data)
         w_dcres.status.valid := false.B
         w_dcres.status.lock := false.B
@@ -205,35 +205,35 @@ class CtrlStage(p: DmuParams) extends Module {
     is (1.U) {
       io.b_dmem.write.data := io.b_in.data.get.dcres.id.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
-        w_field := CONF.ID.U
+        w_index := CONF.ID.U
         w_dcres.id.fromUInt(io.b_dmem.read.data)
       }      
     }
     is (2.U) {
       io.b_dmem.write.data := io.b_in.data.get.dcres.entry
       when (io.b_in.ctrl.get.lsu.ld) {
-        w_field := CONF.ENTRY.U
+        w_index := CONF.ENTRY.U
         w_dcres.entry := io.b_dmem.read.data
       }
     }
     is (3.U) {
       io.b_dmem.write.data := io.b_in.data.get.dcres.table
       when (io.b_in.ctrl.get.lsu.ld) {
-        w_field := CONF.TABLE.U
+        w_index := CONF.TABLE.U
         w_dcres.table := io.b_dmem.read.data
       }
     }
     is (4.U) {
       io.b_dmem.write.data := io.b_in.data.get.dcres.cap.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
-        w_field := CONF.CAP.U
+        w_index := CONF.CAP.U
         w_dcres.cap.fromUInt(io.b_dmem.read.data)
       }
     }
     is (5.U) {
       io.b_dmem.write.data := io.b_in.data.get.dcres.inst.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
-        w_field := CONF.INST.U
+        w_index := CONF.INST.U
         w_dcres.inst.fromUInt(io.b_dmem.read.data)
       }
     }
@@ -267,7 +267,7 @@ class CtrlStage(p: DmuParams) extends Module {
   io.b_rf.sw := io.b_in.ctrl.get.rf.sw
   io.b_rf.addr := io.b_in.ctrl.get.rf.addr
   io.b_rf.full := w_full
-  io.b_rf.field := w_field
+  io.b_rf.index := w_index
   io.b_rf.data := w_dcres
 
   io.b_rf.valid := false.B
@@ -321,7 +321,7 @@ class CtrlStage(p: DmuParams) extends Module {
   io.o_byp.ready := ~io.b_in.ctrl.get.lsu.ld
   io.o_byp.addr := io.b_in.ctrl.get.rf.addr
   io.o_byp.full := w_full
-  io.o_byp.field := w_field
+  io.o_byp.index := w_index
   io.o_byp.data := w_dcres  
   
   // ******************************

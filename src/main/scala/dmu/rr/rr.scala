@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:13 pm                                       *
+ * Last Modified: 2023-02-27 06:01:28 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 import herd.core.aubrac.common._
 
 
@@ -42,7 +42,7 @@ class SlctSource(nDataBit: Int) extends Module {
     is (OP.TL0EPC)  {io.o_val := io.i_tl0epc}
     is (OP.TL1EPC)  {io.o_val := io.i_tl1epc}
 //    is (OP.CONF)  {io.o_val := io.i_dc}
-//    is (OP.FIELD) {io.o_val := io.i_dc}
+//    is (OP.INDEX) {io.o_val := io.i_dc}
   }
 }
 
@@ -53,7 +53,7 @@ class RrStage(p: DmuParams) extends Module {
     val b_req = Flipped(new DmuReqIO(p, p.nAddrBit, p.nDataBit))
 
     val i_state = Input(new RegFileStateBus(p.nDomeCfg, p.pDomeCfg))
-    val i_etl = Input(Vec(p.nCepsTrapLvl, new DmuTrapBus(p.nAddrBit)))
+    val i_etl = Input(Vec(p.nChampTrapLvl, new DmuTrapBus(p.nAddrBit)))
     val b_dcs = Vec(2, Flipped(new RegFileReadIO(p)))
 
     val b_out = new GenRVIO(p, new ExStageBus(p), new DataBus(p))
@@ -87,7 +87,7 @@ class RrStage(p: DmuParams) extends Module {
   switch (io.b_req.ctrl.get.code) {
     is (CODE.RETL0) {
       w_is_ret := true.B
-      if (p.nCepsTrapLvl > 0) {
+      if (p.nChampTrapLvl > 0) {
         w_dcs1 := io.i_etl(0).dc
         when (io.i_etl(0).sw) {
           w_check_uop := CHECKUOP.J
@@ -99,7 +99,7 @@ class RrStage(p: DmuParams) extends Module {
     
     is (CODE.RETL1) {
       w_is_ret := true.B
-      if (p.nCepsTrapLvl > 1) {
+      if (p.nChampTrapLvl > 1) {
         w_dcs1 := io.i_etl(1).dc
         when (io.i_etl(1).sw) {
           w_check_uop := CHECKUOP.J
@@ -117,11 +117,11 @@ class RrStage(p: DmuParams) extends Module {
 
   io.b_dcs(0).addr := w_dcs1
   io.b_dcs(0).full := (io.b_req.ctrl.get.op1 === OP.CONF)
-  io.b_dcs(0).field := io.b_req.data.get.s3(6,0)
+  io.b_dcs(0).index := io.b_req.data.get.s3(6,0)
 
   io.b_dcs(1).addr := w_dcs2
   io.b_dcs(1).full := (io.b_req.ctrl.get.op2 === OP.CONF)
-  io.b_dcs(1).field := io.b_req.data.get.s3(6,0)
+  io.b_dcs(1).index := io.b_req.data.get.s3(6,0)
 
   w_wait_dcs := ~io.b_dcs(0).ready | (w_is_mv & ~io.b_dcs(1).ready)
 
@@ -135,8 +135,8 @@ class RrStage(p: DmuParams) extends Module {
 
   m_slct_s2.io.i_src_type := io.b_req.ctrl.get.op2
   m_slct_s2.io.i_in := io.b_req.data.get.s2
-  if (p.nCepsTrapLvl > 0) m_slct_s2.io.i_tl0epc := io.i_etl(0).pc else m_slct_s2.io.i_tl0epc := DontCare
-  if (p.nCepsTrapLvl > 0) m_slct_s2.io.i_tl1epc := io.i_etl(1).pc else m_slct_s2.io.i_tl1epc := DontCare
+  if (p.nChampTrapLvl > 0) m_slct_s2.io.i_tl0epc := io.i_etl(0).pc else m_slct_s2.io.i_tl0epc := DontCare
+  if (p.nChampTrapLvl > 0) m_slct_s2.io.i_tl1epc := io.i_etl(1).pc else m_slct_s2.io.i_tl1epc := DontCare
 //  m_slct_s2.io.i_dc := io.b_dcs(1).data
 
   // ------------------------------
@@ -146,8 +146,8 @@ class RrStage(p: DmuParams) extends Module {
 
   m_slct_s3.io.i_src_type := io.b_req.ctrl.get.op3
   m_slct_s3.io.i_in := io.b_req.data.get.s3
-  if (p.nCepsTrapLvl > 0) m_slct_s3.io.i_tl0epc := io.i_etl(0).pc else m_slct_s3.io.i_tl0epc := DontCare
-  if (p.nCepsTrapLvl > 0) m_slct_s3.io.i_tl1epc := io.i_etl(1).pc else m_slct_s3.io.i_tl1epc := DontCare
+  if (p.nChampTrapLvl > 0) m_slct_s3.io.i_tl0epc := io.i_etl(0).pc else m_slct_s3.io.i_tl0epc := DontCare
+  if (p.nChampTrapLvl > 0) m_slct_s3.io.i_tl1epc := io.i_etl(1).pc else m_slct_s3.io.i_tl1epc := DontCare
 //  m_slct_s3.io.i_dc := DontCare
 
   // ------------------------------

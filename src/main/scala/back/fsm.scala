@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:58 pm                                       *
+ * Last Modified: 2023-02-27 05:35:07 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -23,8 +23,8 @@ import herd.core.aubrac.common._
 import herd.io.core.clint.{ClintIO}
 
 
-class Fsm (nHart: Int, useCeps: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBit: Int) extends Module {
-  def useDome: Boolean = useCeps
+class Fsm (nHart: Int, useChamp: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBit: Int) extends Module {
+  def useDome: Boolean = useChamp
   
   val io = IO(new Bundle {
     val b_hart = if (useDome) Some(new RsrcIO(nHart, 1, 1)) else None
@@ -92,7 +92,7 @@ class Fsm (nHart: Int, useCeps: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBit
             r_reg.state := STATE.MRET
           }
         }
-        if (!useCeps) {
+        if (!useChamp) {
           switch (io.i_raise.src) {
             is (TRAPSRC.MRET)  {
               r_reg.state := STATE.MRET
@@ -128,7 +128,7 @@ class Fsm (nHart: Int, useCeps: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBit
             r_reg.state := STATE.MRET
           }
         }
-        if (!useCeps) {
+        if (!useChamp) {
           switch (io.i_raise.src) {
             is (TRAPSRC.MRET)  {
               r_reg.state := STATE.MRET
@@ -195,7 +195,7 @@ class Fsm (nHart: Int, useCeps: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBit
   io.o_trap.cause := r_reg.cause
   io.o_trap.info := r_reg.info
 
-  if (useCeps) {
+  if (useChamp) {
     io.o_lock := (r_reg.state === STATE.STOP) | (r_reg.state === STATE.IRQ) | (r_reg.state === STATE.WFI)
 
     io.o_trap.valid :=  ((r_reg.state === STATE.IRQ) & io.i_empty) | (r_reg.state === STATE.EXC)

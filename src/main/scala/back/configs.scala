@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:49 pm                                       *
+ * Last Modified: 2023-02-27 05:34:57 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -24,7 +24,7 @@ object DecoderConfigBase extends DecoderConfig (
   nAddrBit = 32,
   nDataBit = 32,
 
-  useCeps = false,
+  useChamp = false,
   useExtM = true,
   useExtA = false,
   useExtB = false,
@@ -50,10 +50,10 @@ object BackConfigBase extends BackConfig (
   nAddrBit = 32,
   nDataBit = 32,
   
-  useCeps = true,
+  useChamp = true,
   nDome = 1,
   nPart = 1,
-  nCepsTrapLvl = 1,
+  nChampTrapLvl = 1,
 
   useExtM = true,
   useExtA = false,

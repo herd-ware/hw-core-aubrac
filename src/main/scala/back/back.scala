@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:42 pm                                       *
+ * Last Modified: 2023-02-27 05:34:48 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -45,7 +45,7 @@ class Back (p: BackParams) extends Module {
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
-    val b_dmu = if (p.useCeps) Some(Flipped(new DmuIO(p, p.nAddrBit, p.nDataBit, p.nCepsTrapLvl))) else None
+    val b_dmu = if (p.useChamp) Some(Flipped(new DmuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
     val b_csr_mem = new CsrMemIO()
@@ -62,7 +62,7 @@ class Back (p: BackParams) extends Module {
 
   val m_gpr = Module(new Gpr(p))
   val m_csr = Module(new Csr(p))
-  val m_fsm = Module(new Fsm(p.nHart, p.useCeps, p.nInstrBit, p.nAddrBit, p.nDataBit))
+  val m_fsm = Module(new Fsm(p.nHart, p.useChamp, p.nInstrBit, p.nAddrBit, p.nDataBit))
 
   // ******************************
   //             FSM
@@ -206,7 +206,7 @@ class Back (p: BackParams) extends Module {
   // ******************************
   //              DMU
   // ******************************
-  if (p.useCeps) {
+  if (p.useChamp) {
     io.b_dmu.get.ctrl.dmu_flush := m_fsm.io.o_trap.valid
     when (m_csr.io.b_trap.get(0).valid) {
       io.b_dmu.get.req <> m_csr.io.b_trap.get(0)

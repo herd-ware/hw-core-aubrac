@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:00:34 pm                                       *
+ * Last Modified: 2023-02-27 05:58:07 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -18,7 +18,7 @@ package herd.core.aubrac.dmu
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 
 
 // ******************************
@@ -44,7 +44,7 @@ class AluAckDataBus(p: DmuParams) extends Bundle {
 // ******************************
 class CheckReqCtrlBus extends Bundle {
   val uop = UInt(CHECKUOP.NBIT.W)
-  val field = UInt(7.W)
+  val index = UInt(7.W)
 }
 
 class CheckReqDataBus(p: DmuParams) extends Bundle {

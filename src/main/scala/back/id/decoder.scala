@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:01 pm                                       *
+ * Last Modified: 2023-02-27 05:32:59 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.isa.base.{INSTR => BASE, CBIE}
 import herd.common.isa.priv.{INSTR => PRIV, EXC => PRIVEXC}
-import herd.common.isa.ceps.{INSTR => CEPS, EXC => CEPSEXC}
+import herd.common.isa.champ.{INSTR => CHAMP, EXC => CHAMPEXC}
 import herd.core.aubrac.common._
 import herd.core.aubrac.back.csr.{CsrDecoderBus}
 
@@ -65,8 +65,8 @@ class Decoder(p: DecoderParams) extends Module {
   } 
   if (p.useExtZifencei)   t_int ++= TABLEINTZIFENCEI.table
   if (p.useExtZicbo)      t_int ++= TABLEINTZICBO.table
-  if (p.useCeps)          t_int ++= TABLEINTCEPS.table
-  if (!p.useCeps)         t_int ++= TABLEINTPRIV.table
+  if (p.useChamp)         t_int ++= TABLEINTCHAMP.table
+  if (!p.useChamp)        t_int ++= TABLEINTPRIV.table
 
   // LSU table
   var t_lsu = TABLELSU32I.table
@@ -86,7 +86,7 @@ class Decoder(p: DecoderParams) extends Module {
 
   // External table
   var t_ext = TABLEEXT32I.table
-  if (p.useCeps)          t_ext ++= TABLEEXTDMU.table
+  if (p.useChamp)         t_ext ++= TABLEEXTDMU.table
 
   // Decoded signals
   val w_dec_int = ListLookup(io.i_instr, TABLEINT32I.default, t_int)
@@ -114,9 +114,9 @@ class Decoder(p: DecoderParams) extends Module {
   io.o_trap.src := TRAPSRC.EXC  
   io.o_trap.info := DontCare
 
-  if (p.useCeps) {
-    io.o_trap.cause := CEPSEXC.IINSTR.U
-    when (io.i_instr === CEPS.WFI) {
+  if (p.useChamp) {
+    io.o_trap.cause := CHAMPEXC.IINSTR.U
+    when (io.i_instr === CHAMP.WFI) {
       io.o_trap.valid := true.B
       io.o_trap.src := TRAPSRC.WFI
     }

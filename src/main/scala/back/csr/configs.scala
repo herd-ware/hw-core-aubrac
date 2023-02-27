@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:13 pm                                       *
+ * Last Modified: 2023-02-27 05:30:37 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -26,8 +26,8 @@ object CsrConfigBase extends CsrConfig (
   nAddrBit = 32,
   nDataBit = 32,
   
-  useCeps = true,
+  useChamp = true,
   nDome = 1,
   nPart = 1,
-  nCepsTrapLvl = 1
+  nChampTrapLvl = 1
 ) 

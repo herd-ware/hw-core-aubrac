@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:02 pm                                       *
+ * Last Modified: 2023-02-27 05:30:07 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -21,7 +21,7 @@ import scala.math._
 
 import herd.common.isa.base.{CsrBus => BaseCsrBus}
 import herd.common.isa.priv.{CsrBus => PrivCsrBus}
-import herd.common.isa.ceps.{CsrBus => CepsCsrBus}
+import herd.common.isa.champ.{CsrBus => ChampCsrBus}
 import herd.common.isa.count.{CsrBus => CountCsrBus}
 import herd.common.isa.custom.{CsrBus => CustomCsrBus}
 import herd.core.aubrac.common._
@@ -30,11 +30,11 @@ import herd.core.aubrac.common._
 // ******************************
 //           REGISTER
 // ******************************
-class CsrBus(nDataBit: Int, useCeps: Boolean) extends Bundle {
+class CsrBus(nDataBit: Int, useChamp: Boolean) extends Bundle {
   val base = new BaseCsrBus()
   val cnt = new CountCsrBus()
-  val priv = if (!useCeps) Some(new PrivCsrBus(nDataBit)) else None
-  val ceps = if (useCeps) Some(new CepsCsrBus(nDataBit)) else None
+  val priv = if (!useChamp) Some(new PrivCsrBus(nDataBit)) else None
+  val champ = if (useChamp) Some(new ChampCsrBus(nDataBit)) else None
 }
 
 // ******************************

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:30 pm                                       *
+ * Last Modified: 2023-02-27 06:07:36 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -56,7 +56,7 @@ object OP {
   def ZERO    = 0.U(NBIT.W)
   def IN      = 1.U(NBIT.W)
   def CONF    = 2.U(NBIT.W)
-  def FIELD   = 3.U(NBIT.W)
+  def VALUE   = 3.U(NBIT.W)
   def TL0EPC  = 4.U(NBIT.W)
   def TL1EPC  = 5.U(NBIT.W)
 }

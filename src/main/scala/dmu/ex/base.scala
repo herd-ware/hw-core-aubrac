@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:14:45 pm                                       *
+ * Last Modified: 2023-02-27 05:55:39 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -18,7 +18,7 @@ package herd.core.aubrac.dmu
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 
 
 class Base(p: DmuParams) extends Module {
@@ -38,7 +38,7 @@ class Base(p: DmuParams) extends Module {
   // ******************************
   //         USE DOME RANGE
   // ******************************
-  if (p.useCepsExtR) {
+  if (p.useChampExtR) {
     when (io.i_use_old) {
       require(false, "TODO: Base for Dome R Extension must be implemented.")
     }

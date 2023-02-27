@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:23 pm                                       *
+ * Last Modified: 2023-02-27 05:58:27 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 import herd.core.aubrac.common._
 
 
@@ -58,11 +58,11 @@ class DmuTrapBus(nAddrBit: Int) extends Bundle {
   val pc = UInt(nAddrBit.W)
 }
 
-class DmuCsrIO (nAddrBit: Int, nCepsTrapLvl: Int) extends Bundle {  
+class DmuCsrIO (nAddrBit: Int, nChampTrapLvl: Int) extends Bundle {  
   val cdc = Output(UInt(5.W))
   val pdc = Output(UInt(5.W))
-  val atl = Input(Vec(nCepsTrapLvl, Bool()))
-  val etl = Input(Vec(nCepsTrapLvl, new DmuTrapBus(nAddrBit)))
+  val atl = Input(Vec(nChampTrapLvl, Bool()))
+  val etl = Input(Vec(nChampTrapLvl, new DmuTrapBus(nAddrBit)))
 }
 
 class DmuCtrlIO(nAddrBit: Int) extends Bundle {
@@ -72,11 +72,11 @@ class DmuCtrlIO(nAddrBit: Int) extends Bundle {
   val pipe_br = Output(new BranchBus(nAddrBit))
 }
 
-class DmuIO(p: GenParams, nAddrBit: Int, nDataBit: Int, nCepsTrapLvl: Int) extends Bundle {
+class DmuIO(p: GenParams, nAddrBit: Int, nDataBit: Int, nChampTrapLvl: Int) extends Bundle {
   val req = Flipped(new DmuReqIO(p, nAddrBit, nDataBit))
   val ack = new DmuAckIO(p, nAddrBit, nDataBit)
   val ctrl = new DmuCtrlIO(nAddrBit)
-  val csr = new DmuCsrIO(nAddrBit, nCepsTrapLvl)
+  val csr = new DmuCsrIO(nAddrBit, nChampTrapLvl)
 }
 
 // ******************************
@@ -85,7 +85,7 @@ class DmuIO(p: GenParams, nAddrBit: Int, nDataBit: Int, nCepsTrapLvl: Int) exten
 class RegFileReadIO(p: DmuParams) extends Bundle {
   val addr = Input(UInt(log2Ceil(p.nDomeCfg).W))
   val full = Input(Bool())
-  val field = Input(UInt(7.W))
+  val index = Input(UInt(7.W))
   val ready = Output(Bool())
   val data = Output(new DomeCfgBus(p.pDomeCfg))
 }
@@ -96,7 +96,7 @@ class RegFileWriteIO (p: DmuParams) extends Bundle {
   val sw = Input(UInt(SWUOP.NBIT.W))
   val addr = Input(UInt(log2Ceil(p.nDomeCfg).W))
   val full = Input(Bool())
-  val field = Input(UInt(7.W))
+  val index = Input(UInt(7.W))
   val data = Input(new DomeCfgBus(p.pDomeCfg))
 }
 
@@ -106,7 +106,7 @@ class BypassBus (p: DmuParams) extends Bundle {
   val ready = Bool()
   val data = new DomeCfgBus(p.pDomeCfg)
   val full = Bool()
-  val field = UInt(7.W)
+  val index = UInt(7.W)
 }
 
 // ******************************

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:06:36 pm                                       *
+ * Last Modified: 2023-02-27 05:46:58 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -39,7 +39,7 @@ class Pipeline (p: PipelineParams) extends Module {
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
-    val b_dmu = if (p.useCeps) Some(Flipped(new DmuIO(p, p.nAddrBit, p.nDataBit, p.nCepsTrapLvl))) else None
+    val b_dmu = if (p.useChamp) Some(Flipped(new DmuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
     val b_csr_mem = new CsrMemIO()
@@ -92,7 +92,7 @@ class Pipeline (p: PipelineParams) extends Module {
 
   m_back.io.b_dmem <> io.b_dmem  
   if (p.useCbo) m_back.io.b_cbo.get <> io.b_cbo.get
-  if (p.useCeps) m_back.io.b_dmu.get <> io.b_dmu.get
+  if (p.useChamp) m_back.io.b_dmu.get <> io.b_dmu.get
 
   m_back.io.b_csr_mem <> io.b_csr_mem
   m_back.io.b_clint <> io.b_clint

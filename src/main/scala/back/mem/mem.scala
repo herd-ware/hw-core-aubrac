@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:27 pm                                       *
+ * Last Modified: 2023-02-27 05:37:24 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -23,7 +23,7 @@ import herd.common.dome._
 import herd.common.mem.mb4s._
 import herd.common.isa.base._
 import herd.common.isa.priv.{EXC => PRIVEXC}
-import herd.common.isa.ceps.{EXC => CEPSEXC}
+import herd.common.isa.champ.{EXC => CHAMPEXC}
 import herd.core.aubrac.common._
 import herd.core.aubrac.back.csr.{CsrReadIO}
 
@@ -167,8 +167,8 @@ class MemStage (p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.trap.valid := io.b_in.ctrl.get.trap.valid | (io.b_in.ctrl.get.lsu.use & w_exc_misalign)
   when (~io.b_in.ctrl.get.trap.valid & (io.b_in.ctrl.get.lsu.use & w_exc_misalign)) {
     m_out.io.b_in.ctrl.get.trap.src := TRAPSRC.EXC
-    if (p.useCeps) {
-      m_out.io.b_in.ctrl.get.trap.cause := Mux(io.b_in.ctrl.get.lsu.st, CEPSEXC.SADDRMIS.U, CEPSEXC.LADDRMIS.U)
+    if (p.useChamp) {
+      m_out.io.b_in.ctrl.get.trap.cause := Mux(io.b_in.ctrl.get.lsu.st, CHAMPEXC.SADDRMIS.U, CHAMPEXC.LADDRMIS.U)
     } else {
       m_out.io.b_in.ctrl.get.trap.cause := Mux(io.b_in.ctrl.get.lsu.st, PRIVEXC.SADDRMIS.U, PRIVEXC.LADDRMIS.U)
     }    

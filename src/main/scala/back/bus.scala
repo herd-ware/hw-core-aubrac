@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:46 pm                                       *
+ * Last Modified: 2023-02-27 05:34:53 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -214,7 +214,7 @@ class BypassBus(nHart: Int, nDataBit: Int) extends Bundle {
 class BackDbgBus (p: BackParams) extends Bundle {
   val last = UInt(p.nAddrBit.W)
   val x = Vec(32, UInt(p.nDataBit.W))
-  val csr = new CsrBus(p.nDataBit, p.useCeps)
+  val csr = new CsrBus(p.nDataBit, p.useChamp)
 }
 
 // ******************************

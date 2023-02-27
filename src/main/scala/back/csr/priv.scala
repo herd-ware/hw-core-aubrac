@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:27 pm                                       *
+ * Last Modified: 2023-02-27 05:30:57 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -30,7 +30,7 @@ import herd.io.core.clint.{ClintIO}
 
 
 class Priv(p: CsrParams) extends Module {
-  require(!p.useCeps, "Dome support must not be enable for this version of CSR.")
+  require(!p.useChamp, "CHAMP ISA support must not be enable for this version of CSR.")
 
   val io = IO(new Bundle {
     val b_read = Vec(p.nHart, new CsrReadIO(p.nDataBit))

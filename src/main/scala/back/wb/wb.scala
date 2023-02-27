@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:37 pm                                       *
+ * Last Modified: 2023-02-27 05:37:19 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -23,7 +23,7 @@ import herd.common.dome._
 import herd.common.mem.mb4s._
 import herd.common.isa.base._
 import herd.common.isa.priv.{EXC => PRIVEXC}
-import herd.common.isa.ceps.{EXC => CEPSEXC}
+import herd.common.isa.champ.{EXC => CHAMPEXC}
 import herd.core.aubrac.common._
 import herd.core.aubrac.back.csr.{CsrWriteIO}
 import herd.core.aubrac.dmu.{DmuAckIO}
@@ -42,7 +42,7 @@ class WbStage (p: BackParams) extends Module {
     val b_in = Flipped(new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit)))
 
     // External units
-    val b_dmu = if (p.useCeps) Some(Flipped(new DmuAckIO(p, p.nAddrBit, p.nDataBit))) else None
+    val b_dmu = if (p.useChamp) Some(Flipped(new DmuAckIO(p, p.nAddrBit, p.nDataBit))) else None
 
     val b_dmem = new Mb4sAckIO(p.pL0DBus)
     val b_csr = Flipped(new CsrWriteIO(p.nDataBit))
@@ -91,7 +91,7 @@ class WbStage (p: BackParams) extends Module {
     w_wait_dmem := io.b_in.valid & ((io.b_in.ctrl.get.lsu.ld & ~io.b_dmem.read.valid) | (io.b_in.ctrl.get.lsu.st & ~io.b_dmem.write.ready(0)))
   }
   
-  if (p.useCeps){
+  if (p.useChamp){
     w_wait_dmu := io.b_in.valid & (io.b_in.ctrl.get.ext.ext === EXT.DMU) & ~io.b_dmu.get.valid
   } else {
     w_wait_dmu := false.B
@@ -171,7 +171,7 @@ class WbStage (p: BackParams) extends Module {
   // ------------------------------
   //              DMU
   // ------------------------------
-  if (p.useCeps) {
+  if (p.useChamp) {
     io.b_dmu.get.ready := io.b_in.valid & (io.b_in.ctrl.get.ext.ext === EXT.DMU) & ~w_wait_sload
     when (io.b_in.ctrl.get.ext.ext === EXT.DMU) {
       w_res := io.b_dmu.get.data.get
@@ -277,9 +277,9 @@ class WbStage (p: BackParams) extends Module {
   io.o_raise.src := io.b_in.ctrl.get.trap.src
   io.o_raise.cause := io.b_in.ctrl.get.trap.cause
   io.o_raise.info := DontCare
-  if (p.useCeps) {
+  if (p.useChamp) {
     switch (io.b_in.ctrl.get.trap.cause) {
-      is (CEPSEXC.IINSTR.U)   {io.o_raise.info := io.b_in.ctrl.get.info.instr}
+      is (CHAMPEXC.IINSTR.U)   {io.o_raise.info := io.b_in.ctrl.get.info.instr}
     }
   } else {
     switch (io.b_in.ctrl.get.trap.cause) {

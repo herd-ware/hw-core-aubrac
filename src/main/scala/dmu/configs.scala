@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:26 pm                                       *
+ * Last Modified: 2023-02-27 05:56:05 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -26,11 +26,11 @@ object DmuConfigBase extends DmuConfig (
   nAddrBit = 32,
   nDataBit = 32,
   
-  useCeps = true,
-  useCepsExtMie = true,
-  useCepsExtFr = true,
-  useCepsExtCst = true,
-  nCepsTrapLvl = 2,
+  useChamp = true,
+  useChampExtMie = true,
+  useChampExtFr = true,
+  useChampExtCst = true,
+  nChampTrapLvl = 2,
   nPart = 4,
   nDomeCfg = 4,
   nDomeFlushCycle = 10,

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:41 pm                                       *
+ * Last Modified: 2023-02-27 05:34:18 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -22,7 +22,7 @@ import herd.common.gen._
 import herd.common.dome._
 import herd.common.isa.base._
 import herd.common.isa.priv.{EXC => PRIVEXC}
-import herd.common.isa.ceps.{EXC => CEPSEXC}
+import herd.common.isa.champ.{EXC => CHAMPEXC}
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.common._
@@ -48,7 +48,7 @@ class ExStage (p: BackParams) extends Module {
 
     val b_dmem = if (!p.useMemStage || (p.nExStage > 1)) Some(new Mb4sReqIO(p.pL0DBus)) else None
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
-    val b_dmu = if (p.useCeps) Some(new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit))) else None
+    val b_dmu = if (p.useChamp) Some(new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit))) else None
     
     val o_byp = Output(Vec(p.nExStage, new BypassBus(p.nHart, p.nDataBit)))
     val o_br_new = Output(new BranchBus(p.nAddrBit))
@@ -216,7 +216,7 @@ class ExStage (p: BackParams) extends Module {
   // ------------------------------
   //           UNIT: DMU
   // ------------------------------
-  if (p.useCeps) {
+  if (p.useChamp) {
     when (io.b_in.ctrl.get.ext.ext === EXT.DMU) {
       w_ex0_unit_wait := ~io.b_dmu.get.ready
     }
@@ -243,8 +243,8 @@ class ExStage (p: BackParams) extends Module {
     // Misalign exception
     when (~io.b_in.ctrl.get.trap.valid) {      
       w_ex0_trap.src := TRAPSRC.EXC
-      if (p.useCeps) {
-        w_ex0_trap.cause := Mux(io.b_in.ctrl.get.lsu.st, CEPSEXC.SADDRMIS.U, CEPSEXC.LADDRMIS.U)
+      if (p.useChamp) {
+        w_ex0_trap.cause := Mux(io.b_in.ctrl.get.lsu.st, CHAMPEXC.SADDRMIS.U, CHAMPEXC.LADDRMIS.U)
       } else {
         w_ex0_trap.cause := Mux(io.b_in.ctrl.get.lsu.st, PRIVEXC.SADDRMIS.U, PRIVEXC.LADDRMIS.U)
       }      
@@ -763,7 +763,7 @@ class ExStage (p: BackParams) extends Module {
     // ------------------------------
     //       EXECUTION TRACKER
     // ------------------------------
-    if (p.useCeps) io.b_dmu.get.ctrl.get.etd.get := io.b_in.ctrl.get.etd.get
+    if (p.useChamp) io.b_dmu.get.ctrl.get.etd.get := io.b_in.ctrl.get.etd.get
 
     dontTouch(m_out.io.o_reg.ctrl.get.etd.get)
   }

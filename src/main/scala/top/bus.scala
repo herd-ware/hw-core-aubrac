@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:13:05 pm                                       *
+ * Last Modified: 2023-02-27 05:46:02 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -30,14 +30,14 @@ import herd.core.aubrac.back.csr.{CsrBus}
 class PipelineDbgBus (p: PipelineParams) extends Bundle {
   val last = UInt(p.nAddrBit.W)
   val x = Vec(32, UInt(p.nDataBit.W))
-  val csr = new CsrBus(p.nDataBit, p.useCeps)
+  val csr = new CsrBus(p.nDataBit, p.useChamp)
 }
 
 class AubracDbgBus (p: AubracParams) extends Bundle {
   val last = UInt(p.nAddrBit.W)
   val x = Vec(32, UInt(p.nDataBit.W))
-  val csr = new CsrBus(p.nDataBit, p.useCeps)
-  val dc = if (p.useCeps) Some(Vec(p.nDomeCfg, Vec(6, UInt(p.nDataBit.W)))) else None
+  val csr = new CsrBus(p.nDataBit, p.useChamp)
+  val dc = if (p.useChamp) Some(Vec(p.nDomeCfg, Vec(6, UInt(p.nDataBit.W)))) else None
 }
 
 // ******************************

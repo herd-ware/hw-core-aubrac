@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:20 pm                                       *
+ * Last Modified: 2023-02-27 05:30:44 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -37,20 +37,20 @@ class Csr(p: CsrParams) extends Module {
 
     val i_trap = Input(Vec(p.nHart, new TrapBus(p.nAddrBit, p.nDataBit)))
     val o_ie = Output(Vec(p.nHart, UInt(p.nDataBit.W)))
-    val b_trap = if (p.useCeps) Some(Vec(p.nHart, new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit)))) else None
+    val b_trap = if (p.useChamp) Some(Vec(p.nHart, new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit)))) else None
     val o_br_trap = Output(Vec(p.nHart, new BranchBus(p.nAddrBit)))
 
     val i_stat  = Input(Vec(p.nHart, new StatBus()))
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
     val b_mem = Vec(p.nHart, new CsrMemIO())
-    val b_dmu = if (p.useCeps) Some(Vec(p.nHart, Flipped(new DmuCsrIO(p.nAddrBit, p.nCepsTrapLvl)))) else None
+    val b_dmu = if (p.useChamp) Some(Vec(p.nHart, Flipped(new DmuCsrIO(p.nAddrBit, p.nChampTrapLvl)))) else None
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
-    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, p.useCeps)))) else None
+    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, p.useChamp)))) else None
   })
 
-  if (p.useCeps) {
-    val m_csr = Module(new Ceps(p))
+  if (p.useChamp) {
+    val m_csr = Module(new Champ(p))
 
     m_csr.io.b_dome <> io.b_dome.get
     m_csr.io.b_hart <> io.b_hart.get

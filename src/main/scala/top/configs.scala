@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:13:21 pm                                       *
+ * Last Modified: 2023-02-27 05:53:33 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -32,12 +32,12 @@ object PipelineConfigBase extends PipelineConfig (
   nDataBit = 32, 
 
   // ------------------------------
-  //             CEPS
+  //            CHAMP
   // ------------------------------
-  useCeps = true,
+  useChamp = true,
   nDome = 1,
   nPart = 1,
-  nCepsTrapLvl = 1,
+  nChampTrapLvl = 1,
 
   // ------------------------------
   //           FRONT END
@@ -84,13 +84,13 @@ object AubracConfigBase extends AubracConfig (
   nDataBit = 32, 
 
   // ------------------------------
-  //             CEPS
+  //            CHAMP
   // ------------------------------
-  useCeps = true,
-  useCepsExtMie = true,
-  useCepsExtFr = false,
-  useCepsExtCst = true,
-  nCepsTrapLvl = 2,
+  useChamp = true,
+  useChampExtMie = true,
+  useChampExtFr = false,
+  useChampExtCst = true,
+  nChampTrapLvl = 2,
   nPart = 2,
   nDomeFlushCycle = 10,
   nDomeCfg = 4,

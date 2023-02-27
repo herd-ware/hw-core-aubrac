@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:15:58 pm                                       *
+ * Last Modified: 2023-02-27 05:53:40 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -45,13 +45,13 @@ trait PipelineParams extends NlpParams
   def nDataBit: Int 
 
   // ------------------------------
-  //             CEPS
+  //            CHAMP
   // ------------------------------
-  def useCeps: Boolean
+  def useChamp: Boolean
   override def multiDome: Boolean = false
   def nDome: Int
   def nPart: Int
-  def nCepsTrapLvl: Int
+  def nChampTrapLvl: Int
 
   // ------------------------------
   //           FRONT END
@@ -96,10 +96,10 @@ case class PipelineConfig (
   nAddrBit: Int,
   nDataBit: Int, 
 
-  useCeps: Boolean,
+  useChamp: Boolean,
   nDome: Int,
   nPart: Int,
-  nCepsTrapLvl: Int,
+  nChampTrapLvl: Int,
 
   nFetchInstr: Int,
   useIMemSeq: Boolean,
@@ -316,17 +316,17 @@ trait AubracParams extends PipelineParams {
   def nDataBit: Int 
 
   // ------------------------------
-  //             CEPS
+  //            CHAMP
   // ------------------------------
-  def useCeps: Boolean
+  def useChamp: Boolean
   override def multiDome: Boolean = false
-  def useCepsExtMie: Boolean
-  def useCepsExtFr: Boolean
-  def useCepsExtCst: Boolean
-  def nCepsTrapLvl: Int
+  def useChampExtMie: Boolean
+  def useChampExtFr: Boolean
+  def useChampExtCst: Boolean
+  def nChampTrapLvl: Int
   def nDome: Int = {
     var ndome: Int = 1
-    if (useCepsExtFr) {
+    if (useChampExtFr) {
       ndome = ndome + 1
     }
     return ndome
@@ -342,11 +342,11 @@ trait AubracParams extends PipelineParams {
     nAddrBit = nAddrBit,
     nDataBit = nDataBit,
 
-    useCeps = useCeps,
-    useCepsExtMie = useCepsExtMie,
-    useCepsExtFr = useCepsExtFr,
-    useCepsExtCst = useCepsExtCst,
-    nCepsTrapLvl = nCepsTrapLvl,
+    useChamp = useChamp,
+    useChampExtMie = useChampExtMie,
+    useChampExtFr = useChampExtFr,
+    useChampExtCst = useChampExtCst,
+    nChampTrapLvl = nChampTrapLvl,
     nPart = nPart,
     nDomeCfg = nDomeCfg,
     nDomeFlushCycle = nDomeFlushCycle
@@ -479,7 +479,7 @@ trait AubracParams extends PipelineParams {
   // ..............................
   def pL0DArray: Array[Mb4sParams] = {
     var a: Array[Mb4sParams] = Array(pL0DBus)
-    if (useCeps) a = a :+ pDmu.pL0DBus
+    if (useChamp) a = a :+ pDmu.pL0DBus
     a
   }
   def pL0DCrossBus: Mb4sParams = MB4S.node(pL0DArray, false)
@@ -498,7 +498,7 @@ trait AubracParams extends PipelineParams {
     nAddrBit        = nAddrBit        ,
     nAddrBase       = nIOAddrBase     ,
 
-    nCepsTrapLvl    = nCepsTrapLvl    ,
+    nChampTrapLvl    = nChampTrapLvl    ,
 
     useReqReg       = false           ,
     nScratch        = nScratch        ,
@@ -691,13 +691,13 @@ case class AubracConfig (
   nDataBit: Int, 
 
   // ------------------------------
-  //             CEPS
+  //            CHAMP
   // ------------------------------
-  useCeps: Boolean,
-  useCepsExtMie: Boolean,
-  useCepsExtFr: Boolean,
-  useCepsExtCst: Boolean,
-  nCepsTrapLvl: Int,
+  useChamp: Boolean,
+  useChampExtMie: Boolean,
+  useChampExtFr: Boolean,
+  useChampExtCst: Boolean,
+  nChampTrapLvl: Int,
   nPart: Int,
   nDomeFlushCycle: Int,
   nDomeCfg: Int,

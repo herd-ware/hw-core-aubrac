@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:05 pm                                       *
+ * Last Modified: 2023-02-27 05:58:10 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 
 
 class Check(p: DmuParams) extends Module {
@@ -56,8 +56,8 @@ class Check(p: DmuParams) extends Module {
 
   // Modify conf
   val w_mod = Wire(Vec(4, Bool()))
-  w_mod(0) := (io.b_req.ctrl.get.field =/= CONF.ID.U)
-  w_mod(1) := (io.b_req.ctrl.get.field =/= CONF.STATUS.U)  
+  w_mod(0) := (io.b_req.ctrl.get.index =/= CONF.ID.U)
+  w_mod(1) := (io.b_req.ctrl.get.index =/= CONF.STATUS.U)  
   w_mod(2) := w_table_check
   w_mod(3) := w_cap_check
 
@@ -131,7 +131,7 @@ class Check(p: DmuParams) extends Module {
   val w_cmp_id_order = Wire(Vec(nRange + 1, Bool()))
 
   w_cmp_id_order(nRange) := true.B
-  if (p.useCepsExtR) {
+  if (p.useChampExtR) {
     for (o <- 0 until nRange) {
       w_cmp_id_part(o) := (w_dcs.id.part(o) === w_base.id.part(o))
       w_cmp_id_order(o) := w_cmp_id_order(o + 1) & w_cmp_id_part(o)
@@ -170,7 +170,7 @@ class Check(p: DmuParams) extends Module {
   //              ID
   // ------------------------------
   //  Check if confs configuration's ID is managed by base conf
-  if (p.useCepsExtR) {
+  if (p.useChampExtR) {
     w_id_check := w_cmp_id_order(w_base.status.order + 1.U) & w_base.table(w_dcs.id.toPart(w_base.status.order))
   } else {
     w_id_check := w_base.table(w_dcs.id.part(0))
@@ -179,7 +179,7 @@ class Check(p: DmuParams) extends Module {
   // ------------------------------
   //             ORDER
   // ------------------------------
-  if (p.useCepsExtR) {
+  if (p.useChampExtR) {
     when (w_base.status.order >= w_dcs.status.order)  {
       w_order_check := w_id_check
     }.elsewhen (w_dcs.status.order === (w_base.status.order + 1.U)) {
@@ -194,7 +194,7 @@ class Check(p: DmuParams) extends Module {
   // ------------------------------
   //             TABLE
   // ------------------------------
-  if (p.useCepsExtR) {
+  if (p.useChampExtR) {
     when (w_base.status.order > w_dcs.status.order)  {
       w_table_check := w_id_check
     }.elsewhen (w_dcs.status.order === w_base.status.order) {

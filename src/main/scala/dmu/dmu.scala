@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:33 pm                                       *
+ * Last Modified: 2023-02-27 05:56:11 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -21,13 +21,13 @@ import chisel3.util._
 import herd.common.gen._
 import herd.common.dome._
 import herd.common.mem.mb4s._
-import herd.common.isa.ceps._
+import herd.common.isa.champ._
 import herd.core.aubrac.common._
 
 
 class Dmu (p: DmuParams) extends Module {
   val io = IO(new Bundle {
-    val b_port = new DmuIO(p, p.nAddrBit, p.nDataBit, p.nCepsTrapLvl)
+    val b_port = new DmuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl)
 
     val b_dome = Flipped(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit)))
     val b_hart = Flipped(new RsrcIO(p.nHart, p.nDome, 1))
