@@ -1,10 +1,10 @@
 /*
- * File: decoder.scala                                                         *
+ * File: decoder.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:32:59 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:30:59 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,7 +18,7 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.base.{INSTR => BASE, CBIE}
+import herd.common.isa.riscv.{INSTR => RISCV, CBIE}
 import herd.common.isa.priv.{INSTR => PRIV, EXC => PRIVEXC}
 import herd.common.isa.champ.{INSTR => CHAMP, EXC => CHAMPEXC}
 import herd.core.aubrac.common._
@@ -86,7 +86,7 @@ class Decoder(p: DecoderParams) extends Module {
 
   // External table
   var t_ext = TABLEEXT32I.table
-  if (p.useChamp)         t_ext ++= TABLEEXTDMU.table
+  if (p.useChamp)         t_ext ++= TABLEEXTHFU.table
 
   // Decoded signals
   val w_dec_int = ListLookup(io.i_instr, TABLEINT32I.default, t_int)
@@ -132,16 +132,16 @@ class Decoder(p: DecoderParams) extends Module {
   }
 
   if (p.useExtZicbo) {
-    when ((io.i_instr === BASE.CBOINVAL) & (io.i_csr.cbie === CBIE.ILL)) {
+    when ((io.i_instr === RISCV.CBOINVAL) & (io.i_csr.cbie === CBIE.ILL)) {
       io.o_trap.valid := true.B
     }
-    when ((io.i_instr === BASE.CBOCLEAN) & (~io.i_csr.cbcfe)) {
+    when ((io.i_instr === RISCV.CBOCLEAN) & (~io.i_csr.cbcfe)) {
       io.o_trap.valid := true.B
     }
-    when ((io.i_instr === BASE.CBOFLUSH) & (~io.i_csr.cbcfe)) {
+    when ((io.i_instr === RISCV.CBOFLUSH) & (~io.i_csr.cbcfe)) {
       io.o_trap.valid := true.B
     }
-    when ((io.i_instr === BASE.CBOZERO) & (~io.i_csr.cbze)) {
+    when ((io.i_instr === RISCV.CBOZERO) & (~io.i_csr.cbze)) {
       io.o_trap.valid := true.B
     }
   }
@@ -169,7 +169,7 @@ class Decoder(p: DecoderParams) extends Module {
   }
 
   if (p.useExtZicbo) {
-    when ((io.i_instr === BASE.CBOINVAL) & (io.i_csr.cbie === CBIE.FLUSH)) {
+    when ((io.i_instr === RISCV.CBOINVAL) & (io.i_csr.cbie === CBIE.FLUSH)) {
       io.o_int.uop := INTUOP.FLUSH
     }
   }

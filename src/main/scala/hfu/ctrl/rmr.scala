@@ -1,10 +1,10 @@
 /*
- * File: rmr.scala                                                             *
+ * File: rmr.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:55:35 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:32:55 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 import chisel3.util._
@@ -30,15 +30,15 @@ object RmrFSM extends ChiselEnum {
   val s0IDLE, s1SWFLUSH, s2SWLAUNCH, s3FRFLUSH, s4FREXE = Value
 }
 
-class Rmr (p: DmuParams) extends Module {
-  import herd.core.aubrac.dmu.RmrFSM._
+class Rmr (p: HfuParams) extends Module {
+  import herd.core.aubrac.hfu.RmrFSM._
 
   require(((!p.useChampExtFr) || (p.nPart > 2)), "At least three parts are necesary to use fast recovery.")
   
   val io = IO(new Bundle {
     val b_req = Flipped(new RmrReqIO(p))
 
-    val i_state = Input(new RegFileStateBus(p.nDomeCfg, p.pDomeCfg))
+    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
 
     val o_flush = Output(Bool())
     val b_dome = Flipped(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit)))
@@ -69,10 +69,10 @@ class Rmr (p: DmuParams) extends Module {
   val w_fr_flush = Wire(Bool())
   val w_fr_sw = Wire(Bool())
 
-  w_exe_flush := io.i_state.cur.dc.cap.secmie | io.b_req.dcres.cap.secmie
+  w_exe_flush := io.i_state.cur.hf.cap.secmie | io.b_req.hfres.cap.secmie
   if (p.useChampExtFr) {
-    w_fr_sw := io.i_state.cur.dc.cap.feafr & io.i_state.cur.dc.inst.fr
-    w_fr_flush := w_fr_sw & io.i_state.fr.dc.cap.secmie
+    w_fr_sw := io.i_state.cur.hf.cap.feafr & io.i_state.cur.hf.inst.fr
+    w_fr_flush := w_fr_sw & io.i_state.fr.hf.cap.secmie
   } else {
     w_fr_sw := false.B
     w_fr_flush := false.B
@@ -100,7 +100,7 @@ class Rmr (p: DmuParams) extends Module {
       }.otherwise {
         if (p.useChampExtFr) {
           when (io.b_req.valid & (io.b_req.op === RMRUOP.NOFR)) {
-            when (io.i_state.cur.dc.cap.secmie | io.i_state.fr.dc.cap.secmie) {
+            when (io.i_state.cur.hf.cap.secmie | io.i_state.fr.hf.cap.secmie) {
               r_fsm := s3FRFLUSH
               r_reg.fr_flush := true.B
             }.otherwise {
@@ -183,8 +183,8 @@ class Rmr (p: DmuParams) extends Module {
     val w_fr_mie = Wire(Bool())
 
     if (p.useChampExtMie) {
-      w_exe_mie := (r_state(d).mie === io.i_state.cur.dc.cap.secmie)
-      w_fr_mie := (r_state(d).mie === io.i_state.fr.dc.cap.secmie)
+      w_exe_mie := (r_state(d).mie === io.i_state.cur.hf.cap.secmie)
+      w_fr_mie := (r_state(d).mie === io.i_state.fr.hf.cap.secmie)
     } else {
       w_exe_mie := true.B
       w_fr_mie := true.B
@@ -195,8 +195,8 @@ class Rmr (p: DmuParams) extends Module {
     val w_fr_cst = Wire(Bool())
 
     if (p.useChampExtCst) {
-      w_exe_cst := (r_state(d).cst === io.i_state.cur.dc.cap.seccst)
-      w_fr_cst := (r_state(d).cst === io.i_state.fr.dc.cap.seccst)
+      w_exe_cst := (r_state(d).cst === io.i_state.cur.hf.cap.seccst)
+      w_fr_cst := (r_state(d).cst === io.i_state.fr.hf.cap.seccst)
     } else {
       w_exe_cst := true.B
       w_fr_cst := true.B
@@ -205,14 +205,14 @@ class Rmr (p: DmuParams) extends Module {
     // Compare all
     w_dome_used(d) := false.B
 
-    when ((r_state(d).id === io.i_state.cur.dc.id.toUInt) & w_exe_mie & w_exe_cst) {
+    when ((r_state(d).id === io.i_state.cur.hf.id.toUInt) & w_exe_mie & w_exe_cst) {
       w_dome_used(d) := true.B
       w_dome_exe_here := true.B
       w_dome_exe_slct := d.U
     }
 
     if (p.useChampExtFr) {
-      when (io.i_state.fr.valid & (r_state(d).id === io.i_state.fr.dc.id.toUInt) & w_fr_mie & w_fr_cst) {
+      when (io.i_state.fr.valid & (r_state(d).id === io.i_state.fr.hf.id.toUInt) & w_fr_mie & w_fr_cst) {
         w_dome_used(d) := true.B
       }
     }    
@@ -231,9 +231,9 @@ class Rmr (p: DmuParams) extends Module {
       r_exe_dome := w_dome_exe_slct
 
       when(~w_dome_exe_here) {
-        r_state(w_dome_exe_slct).id      := io.i_state.fr.dc.id.toUInt
-        r_state(w_dome_exe_slct).mie     := io.i_state.fr.dc.cap.secmie
-        r_state(w_dome_exe_slct).cst     := io.i_state.fr.dc.cap.seccst
+        r_state(w_dome_exe_slct).id      := io.i_state.fr.hf.id.toUInt
+        r_state(w_dome_exe_slct).mie     := io.i_state.fr.hf.cap.secmie
+        r_state(w_dome_exe_slct).cst     := io.i_state.fr.hf.cap.seccst
         r_state(w_dome_exe_slct).use(0)  := true.B
       }
 
@@ -288,24 +288,24 @@ class Rmr (p: DmuParams) extends Module {
     for (d <- 0 until p.nDome) {
       io.b_dome(d).valid := r_state(d).use.asUInt.orR 
       io.b_dome(d).id := r_state(d).id
-      io.b_dome(d).entry := Mux(r_state(d).use(1), io.i_state.fr.dc.entry, io.i_state.cur.dc.entry)
+      io.b_dome(d).entry := Mux(r_state(d).use(1), io.i_state.fr.hf.entry, io.i_state.cur.hf.entry)
       io.b_dome(d).exe := r_state(d).use(0)
       io.b_dome(d).flush := (r_state(d).use(0) & r_reg.cur_flush) | (r_state(d).use(1) & r_reg.fr_flush)
-      io.b_dome(d).tl := Mux(r_state(d).use(1), io.i_state.fr.dc.cap.featl, io.i_state.cur.dc.cap.featl)
-      io.b_dome(d).cbo := Mux(r_state(d).use(1), io.i_state.fr.dc.cap.feacbo, io.i_state.cur.dc.cap.feacbo)
+      io.b_dome(d).tl := Mux(r_state(d).use(1), io.i_state.fr.hf.cap.featl, io.i_state.cur.hf.cap.featl)
+      io.b_dome(d).cbo := Mux(r_state(d).use(1), io.i_state.fr.hf.cap.feacbo, io.i_state.cur.hf.cap.feacbo)
       io.b_dome(d).mie := r_state(d).mie
     }   
 
   /// One domes
   } else {
     io.b_dome(0).valid := true.B
-    io.b_dome(0).id := io.i_state.cur.dc.id.toUInt
-    io.b_dome(0).entry := io.i_state.cur.dc.entry
+    io.b_dome(0).id := io.i_state.cur.hf.id.toUInt
+    io.b_dome(0).entry := io.i_state.cur.hf.entry
     io.b_dome(0).exe := true.B
     io.b_dome(0).flush := r_reg.cur_flush
-    io.b_dome(0).tl := io.i_state.cur.dc.cap.featl
-    io.b_dome(0).cbo := io.i_state.cur.dc.cap.feacbo
-    io.b_dome(0).mie := io.i_state.cur.dc.cap.secmie
+    io.b_dome(0).tl := io.i_state.cur.hf.cap.featl
+    io.b_dome(0).cbo := io.i_state.cur.hf.cap.feacbo
+    io.b_dome(0).mie := io.i_state.cur.hf.cap.secmie
   }
 
   // ******************************
@@ -447,5 +447,5 @@ class Rmr (p: DmuParams) extends Module {
 }
 
 object Rmr extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Rmr(DmuConfigBase), args)
+  (new chisel3.stage.ChiselStage).emitVerilog(new Rmr(HfuConfigBase), args)
 }

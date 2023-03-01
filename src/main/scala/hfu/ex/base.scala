@@ -1,10 +1,10 @@
 /*
- * File: base.scala                                                            *
+ * File: base.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:55:39 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:33:00 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 import chisel3.util._
@@ -21,7 +21,7 @@ import chisel3.util._
 import herd.common.isa.champ._
 
 
-class Base(p: DmuParams) extends Module {
+class Base(p: HfuParams) extends Module {
   val io = IO(new Bundle {
     val i_use_old = Input(Bool())
     val i_exe = Input(new DomeCfgBus(p.pDomeCfg))
@@ -55,5 +55,5 @@ class Base(p: DmuParams) extends Module {
   } 
 }
 object Base extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Base(DmuConfigBase), args)
+  (new chisel3.stage.ChiselStage).emitVerilog(new Base(HfuConfigBase), args)
 }

@@ -1,10 +1,10 @@
 /*
- * File: champ.scala                                                           *
+ * File: champ.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:30:26 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:33:53 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -23,11 +23,11 @@ import herd.common.gen._
 import herd.common.dome._
 import herd.common.isa.count.{CsrBus => StatBus}
 import herd.core.aubrac.common._
-import herd.core.aubrac.dmu.{DmuReqCtrlBus, DmuReqDataBus, DmuCsrIO}
-import herd.core.aubrac.dmu.{CODE => DMUCODE, OP => DMUOP}
+import herd.core.aubrac.hfu.{HfuReqCtrlBus, HfuReqDataBus, HfuCsrIO}
+import herd.core.aubrac.hfu.{CODE => HFUCODE, OP => HFUOP}
 import herd.io.core.clint.{ClintIO}
 
-import herd.common.isa.base.{CBIE}
+import herd.common.isa.riscv.{CBIE}
 import herd.common.isa.champ._
 import herd.common.isa.champ.CSR._
 import herd.common.isa.count.CSR._
@@ -46,13 +46,13 @@ class Champ(p: CsrParams) extends Module {
 
     val i_trap = Input(Vec(p.nHart, new TrapBus(p.nAddrBit, p.nDataBit)))
     val o_ie = Output(Vec(p.nHart, UInt(p.nDataBit.W)))
-    val b_trap = Vec(p.nHart, new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit)))
+    val b_trap = Vec(p.nHart, new GenRVIO(p, new HfuReqCtrlBus(p.debug, p.nAddrBit), new HfuReqDataBus(p.nDataBit)))
     val o_br_trap = Output(Vec(p.nHart, new BranchBus(p.nAddrBit)))
 
     val i_stat = Input(Vec(p.nHart, new StatBus()))
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
     val b_mem = Vec(p.nHart, new CsrMemIO())
-    val b_dmu = Vec(p.nHart, Flipped(new DmuCsrIO(p.nAddrBit, p.nChampTrapLvl)))
+    val b_hfu = Vec(p.nHart, Flipped(new HfuCsrIO(p.nAddrBit, p.nChampTrapLvl)))
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
     val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, true)))) else None
@@ -65,34 +65,34 @@ class Champ(p: CsrParams) extends Module {
   init_csr := DontCare
 
   for (h <- 0 until p.nHart) {
-    init_csr(h).champ.get.cdc         := 0.U 
-    init_csr(h).champ.get.pdc         := 0.U 
+    init_csr(h).champ.get.chf         := 0.U 
+    init_csr(h).champ.get.phf         := 0.U 
     
     init_csr(h).champ.get.hl0id       := h.U
 
     init_csr(h).champ.get.tl0status   := DontCare
-    init_csr(h).champ.get.tl0tdc      := DontCare
+    init_csr(h).champ.get.tl0thf      := DontCare
     init_csr(h).champ.get.tl0edeleg   := DontCare
     init_csr(h).champ.get.tl0ideleg   := DontCare
     init_csr(h).champ.get.tl0ie       := DontCare
     init_csr(h).champ.get.tl0tvec     := DontCare
 
     init_csr(h).champ.get.tl0scratch  := DontCare
-    init_csr(h).champ.get.tl0edc      := DontCare
+    init_csr(h).champ.get.tl0ehf      := DontCare
     init_csr(h).champ.get.tl0epc      := DontCare 
     init_csr(h).champ.get.tl0cause    := DontCare
     init_csr(h).champ.get.tl0tval     := DontCare
     init_csr(h).champ.get.tl0ip       := DontCare
 
     init_csr(h).champ.get.tl1status   := DontCare
-    init_csr(h).champ.get.tl1tdc      := DontCare
+    init_csr(h).champ.get.tl1thf      := DontCare
     init_csr(h).champ.get.tl1edeleg   := DontCare
     init_csr(h).champ.get.tl1ideleg   := DontCare
     init_csr(h).champ.get.tl1ie       := DontCare
     init_csr(h).champ.get.tl1tvec     := DontCare
 
     init_csr(h).champ.get.tl1scratch  := DontCare
-    init_csr(h).champ.get.tl1edc      := DontCare
+    init_csr(h).champ.get.tl1ehf      := DontCare
     init_csr(h).champ.get.tl1epc      := DontCare
     init_csr(h).champ.get.tl1cause    := DontCare
     init_csr(h).champ.get.tl1tval     := DontCare 
@@ -182,15 +182,15 @@ class Champ(p: CsrParams) extends Module {
         when (io.b_dome(io.b_hart(h).dome).tl(0)) {
           switch (io.b_write(h).addr) {
             is (TL0STATUS.U)    {r_csr(h).champ.get.tl0status := w_wdata(h)}
-            is (TL0TDC.U)       {r_csr(h).champ.get.tl0tdc := w_wdata(h)}
+            is (TL0THF.U)       {r_csr(h).champ.get.tl0thf := w_wdata(h)}
             is (TL0EDELEG.U)    {r_csr(h).champ.get.tl0edeleg := w_wdata(h)}
             is (TL0IDELEG.U)    {r_csr(h).champ.get.tl0ideleg := w_wdata(h)}
             is (TL0IE.U)        {r_csr(h).champ.get.tl0ie := w_wdata(h)}
             is (TL0TVEC.U)      {r_csr(h).champ.get.tl0tvec := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))}
             is (TL0SCRATCH.U)   {r_csr(h).champ.get.tl0scratch := w_wdata(h)}
-            is (TL0EDC.U)       {r_csr(h).champ.get.tl0edc := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), w_wdata(h)(4, 0))}
+            is (TL0EHF.U)       {r_csr(h).champ.get.tl0ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), w_wdata(h)(4, 0))}
             is (TL0EPC.U)       {r_csr(h).champ.get.tl0epc := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))
-                                 r_csr(h).champ.get.tl0edc := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), r_csr(h).champ.get.tl0edc(4, 0))}                               
+                                 r_csr(h).champ.get.tl0ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), r_csr(h).champ.get.tl0ehf(4, 0))}                               
             is (TL0TVAL.U)      {r_csr(h).champ.get.tl0tval := w_wdata(h)}
           }
         }  
@@ -200,13 +200,13 @@ class Champ(p: CsrParams) extends Module {
         when (io.b_dome(io.b_hart(h).dome).tl(1)) {
           switch (io.b_write(h).addr) {
             is (TL1STATUS.U)    {r_csr(h).champ.get.tl1status := w_wdata(h)}
-            is (TL1TDC.U)       {r_csr(h).champ.get.tl1tdc := w_wdata(h)}
+            is (TL1THF.U)       {r_csr(h).champ.get.tl1thf := w_wdata(h)}
             is (TL1IE.U)        {r_csr(h).champ.get.tl1ie := w_wdata(h)}
             is (TL1TVEC.U)      {r_csr(h).champ.get.tl1tvec := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))}
             is (TL1SCRATCH.U)   {r_csr(h).champ.get.tl1scratch := w_wdata(h)}
-            is (TL1EDC.U)       {r_csr(h).champ.get.tl1edc := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), w_wdata(h)(4, 0))}
+            is (TL1EHF.U)       {r_csr(h).champ.get.tl1ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), w_wdata(h)(4, 0))}
             is (TL1EPC.U)       {r_csr(h).champ.get.tl1epc := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))
-                                 r_csr(h).champ.get.tl1edc := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), r_csr(h).champ.get.tl1edc(4, 0))}
+                                 r_csr(h).champ.get.tl1ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), r_csr(h).champ.get.tl1ehf(4, 0))}
             is (TL1TVAL.U)      {r_csr(h).champ.get.tl1tval := w_wdata(h)}
           }
         }   
@@ -225,9 +225,9 @@ class Champ(p: CsrParams) extends Module {
   val w_is_tl1handler = Wire(Vec(p.nHart, Bool()))
 
   for (h <- 0 until p.nHart) {
-    w_is_tl0handler(h) := io.b_dome(io.b_hart(h).dome).tl(0) & (r_csr(h).champ.get.tl0tdc === io.b_dmu(h).cdc)
-    if (p.nChampTrapLvl > 1) w_is_tl1handler(h) := (r_csr(h).champ.get.tl1tdc === io.b_dmu(h).cdc) else w_is_tl1handler(h) := false.B
-    w_is_tl0deleg(h) := (io.i_trap(h).cause(p.nDataBit - 2, 5) === 0.U) & r_csr(h).champ.get.tl0edeleg(io.i_trap(h).cause(4, 0)) & (r_csr(h).champ.get.tl1tdc === io.b_dmu(h).cdc)
+    w_is_tl0handler(h) := io.b_dome(io.b_hart(h).dome).tl(0) & (r_csr(h).champ.get.tl0thf === io.b_hfu(h).chf)
+    if (p.nChampTrapLvl > 1) w_is_tl1handler(h) := (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf) else w_is_tl1handler(h) := false.B
+    w_is_tl0deleg(h) := (io.i_trap(h).cause(p.nDataBit - 2, 5) === 0.U) & r_csr(h).champ.get.tl0edeleg(io.i_trap(h).cause(4, 0)) & (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf)
   }
 
   // ------------------------------
@@ -237,12 +237,12 @@ class Champ(p: CsrParams) extends Module {
     when (io.i_trap(h).valid) {
       when ((io.i_trap(h).src === TRAPSRC.IRQ) | (io.i_trap(h).src === TRAPSRC.EXC)) {
         when (~w_is_tl0handler(h) & w_is_tl0deleg(h)) {
-          r_csr(h).champ.get.tl1edc := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), io.b_dmu(h).cdc)
+          r_csr(h).champ.get.tl1ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), io.b_hfu(h).chf)
           r_csr(h).champ.get.tl1epc := io.i_trap(h).pc
           r_csr(h).champ.get.tl1cause := Cat((io.i_trap(h).src === TRAPSRC.IRQ), io.i_trap(h).cause)
           r_csr(h).champ.get.tl1tval := io.i_trap(h).info
         }.otherwise {
-          r_csr(h).champ.get.tl0edc := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), io.b_dmu(h).cdc)
+          r_csr(h).champ.get.tl0ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), io.b_hfu(h).chf)
           r_csr(h).champ.get.tl0epc := io.i_trap(h).pc
           r_csr(h).champ.get.tl0cause := Cat((io.i_trap(h).src === TRAPSRC.IRQ), io.i_trap(h).cause)
           r_csr(h).champ.get.tl0tval := io.i_trap(h).info
@@ -251,15 +251,15 @@ class Champ(p: CsrParams) extends Module {
     } 
 
     if (p.nChampTrapLvl > 0) {
-      io.b_dmu(h).etl(0).sw := r_csr(h).champ.get.tl0edc(p.nDataBit - 1)
-      io.b_dmu(h).etl(0).dc := r_csr(h).champ.get.tl0edc(4, 0)
-      io.b_dmu(h).etl(0).pc := r_csr(h).champ.get.tl0epc
+      io.b_hfu(h).etl(0).sw := r_csr(h).champ.get.tl0ehf(p.nDataBit - 1)
+      io.b_hfu(h).etl(0).hf := r_csr(h).champ.get.tl0ehf(4, 0)
+      io.b_hfu(h).etl(0).pc := r_csr(h).champ.get.tl0epc
     }
 
     if (p.nChampTrapLvl > 0) {
-      io.b_dmu(h).etl(1).sw := r_csr(h).champ.get.tl1edc(p.nDataBit - 1)
-      io.b_dmu(h).etl(1).dc := r_csr(h).champ.get.tl1edc(4, 0)
-      io.b_dmu(h).etl(1).pc := r_csr(h).champ.get.tl1epc
+      io.b_hfu(h).etl(1).sw := r_csr(h).champ.get.tl1ehf(p.nDataBit - 1)
+      io.b_hfu(h).etl(1).hf := r_csr(h).champ.get.tl1ehf(4, 0)
+      io.b_hfu(h).etl(1).pc := r_csr(h).champ.get.tl1epc
     }
   }
 
@@ -278,7 +278,7 @@ class Champ(p: CsrParams) extends Module {
 
   for (h <- 0 until p.nHart) {
     for (tl <- 0 until p.nChampTrapLvl) {
-      io.b_dmu(h).atl := r_atl(h)
+      io.b_hfu(h).atl := r_atl(h)
       when (io.b_hart(h).flush) {
         r_atl(h)(tl) := false.B
       }
@@ -304,17 +304,17 @@ class Champ(p: CsrParams) extends Module {
         io.o_br_trap(h).addr := r_csr(h).champ.get.tl0tvec          
       }.otherwise {
         io.b_trap(h).valid := true.B
-        io.b_trap(h).ctrl.get.code := DMUCODE.TRAP
-        io.b_trap(h).ctrl.get.op2 := DMUOP.IN
-        io.b_trap(h).ctrl.get.op3 := DMUOP.X
+        io.b_trap(h).ctrl.get.code := HFUCODE.TRAP
+        io.b_trap(h).ctrl.get.op2 := HFUOP.IN
+        io.b_trap(h).ctrl.get.op3 := HFUOP.X
         io.b_trap(h).ctrl.get.wb := false.B
         when (w_is_tl0deleg(h)) {
           r_atl(h)(1) := true.B
-          io.b_trap(h).ctrl.get.dcs1 := r_csr(h).champ.get.tl1tdc
+          io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl1thf
           io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tl1tvec
         }.otherwise {
           r_atl(h)(0) := true.B
-          io.b_trap(h).ctrl.get.dcs1 := r_csr(h).champ.get.tl0tdc
+          io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl0thf
           io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tl0tvec
         }
       }
@@ -358,8 +358,8 @@ class Champ(p: CsrParams) extends Module {
 
     when (io.b_read(h).valid) {
       switch (io.b_read(h).addr) {
-        is (CDC.U)            {io.b_read(h).data := io.b_dmu(h).cdc}
-        is (PDC.U)            {io.b_read(h).data := io.b_dmu(h).pdc}
+        is (CHF.U)            {io.b_read(h).data := io.b_hfu(h).chf}
+        is (PHF.U)            {io.b_read(h).data := io.b_hfu(h).phf}
 
         is (HL0ID.U)          {io.b_read(h).data := r_csr(0).champ.get.hl0id}
         is (ENVCFG.U)         {io.b_read(h).data := r_csr(h).champ.get.envcfg((p.nDataBit - 1),0)}
@@ -392,14 +392,14 @@ class Champ(p: CsrParams) extends Module {
       if (p.nChampTrapLvl > 0) {
         switch (io.b_read(h).addr) {
           is (TL0STATUS.U)      {io.b_read(h).data := r_csr(h).champ.get.tl0status}
-          is (TL0TDC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0tdc}
+          is (TL0THF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0thf}
           is (TL0EDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tl0edeleg}
           is (TL0IDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tl0ideleg}
           is (TL0IE.U)          {io.b_read(h).data := r_csr(h).champ.get.tl0ie}
           is (TL0TVEC.U)        {io.b_read(h).data := r_csr(h).champ.get.tl0tvec}
 
           is (TL0SCRATCH.U)     {io.b_read(h).data := r_csr(h).champ.get.tl0scratch}
-          is (TL0EDC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0edc}
+          is (TL0EHF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0ehf}
           is (TL0EPC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0epc}
           is (TL0CAUSE.U)       {io.b_read(h).data := r_csr(h).champ.get.tl0cause}
           is (TL0TVAL.U)        {io.b_read(h).data := r_csr(h).champ.get.tl0tval}
@@ -410,12 +410,12 @@ class Champ(p: CsrParams) extends Module {
       if (p.nChampTrapLvl > 1) {
         switch (io.b_read(h).addr) {
           is (TL1STATUS.U)      {io.b_read(h).data := r_csr(h).champ.get.tl1status}
-          is (TL1TDC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1tdc}
+          is (TL1THF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1thf}
           is (TL1IE.U)          {io.b_read(h).data := r_csr(h).champ.get.tl1ie}
           is (TL1TVEC.U)        {io.b_read(h).data := r_csr(h).champ.get.tl1tvec}
 
           is (TL1SCRATCH.U)     {io.b_read(h).data := r_csr(h).champ.get.tl1scratch}
-          is (TL1EDC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1edc}
+          is (TL1EHF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1ehf}
           is (TL1EPC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1epc}
           is (TL1CAUSE.U)       {io.b_read(h).data := r_csr(h).champ.get.tl1cause}
           is (TL1TVAL.U)        {io.b_read(h).data := r_csr(h).champ.get.tl1tval}
@@ -462,13 +462,13 @@ class Champ(p: CsrParams) extends Module {
     for (h <- 0 until p.nHart) {
       io.o_dbg.get(h) := r_csr(h)
 
-      io.o_dbg.get(h).base.cycle    := r_csr(0).cnt.cycle
-      io.o_dbg.get(h).base.time     := r_csr(0).cnt.time
-      io.o_dbg.get(h).base.instret  := r_csr(h).cnt.instret
+      io.o_dbg.get(h).riscv.cycle   := r_csr(0).cnt.cycle
+      io.o_dbg.get(h).riscv.time    := r_csr(0).cnt.time
+      io.o_dbg.get(h).riscv.instret := r_csr(h).cnt.instret
       io.o_dbg.get(h).cnt.cycle     := r_csr(0).cnt.cycle
       io.o_dbg.get(h).cnt.time      := r_csr(0).cnt.time
-      io.o_dbg.get(h).champ.get.cdc  := io.b_dmu(h).cdc
-      io.o_dbg.get(h).champ.get.pdc  := io.b_dmu(h).pdc
+      io.o_dbg.get(h).champ.get.chf := io.b_hfu(h).chf
+      io.o_dbg.get(h).champ.get.phf := io.b_hfu(h).phf
 
       dontTouch(r_csr(h).cnt)
     }    

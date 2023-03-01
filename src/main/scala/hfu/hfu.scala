@@ -1,10 +1,10 @@
 /*
- * File: dmu.scala                                                             *
+ * File: hfu.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:56:11 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:32:40 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 import chisel3.util._
@@ -25,9 +25,9 @@ import herd.common.isa.champ._
 import herd.core.aubrac.common._
 
 
-class Dmu (p: DmuParams) extends Module {
+class Hfu (p: HfuParams) extends Module {
   val io = IO(new Bundle {
-    val b_port = new DmuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl)
+    val b_port = new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl)
 
     val b_dome = Flipped(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit)))
     val b_hart = Flipped(new RsrcIO(p.nHart, p.nDome, 1))
@@ -36,9 +36,9 @@ class Dmu (p: DmuParams) extends Module {
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
 
-    val o_state = Output(new RegFileStateBus(p.nDomeCfg, p.pDomeCfg))
+    val o_state = Output(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
 
-    val o_dbg = if (p.debug) Some(Output(Vec(p.nDomeCfg, Vec(6, UInt(p.nDataBit.W))))) else None
+    val o_dbg = if (p.debug) Some(Output(Vec(p.nChampReg, Vec(6, UInt(p.nDataBit.W))))) else None
   })
 
   val m_rr = Module(new RrStage(p))
@@ -52,7 +52,7 @@ class Dmu (p: DmuParams) extends Module {
   // ******************************
   //              RR
   // ******************************
-  m_rr.io.i_flush := m_rmr.io.o_flush | io.b_port.ctrl.dmu_flush
+  m_rr.io.i_flush := m_rmr.io.o_flush | io.b_port.ctrl.hfu_flush
   m_rr.io.b_req <> io.b_port.req
   m_rr.io.i_state := m_rf.io.o_state
   m_rr.io.i_etl := io.b_port.csr.etl
@@ -60,14 +60,14 @@ class Dmu (p: DmuParams) extends Module {
   // ******************************
   //              OP
   // ******************************
-  m_ex.io.i_flush := m_rmr.io.o_flush | io.b_port.ctrl.dmu_flush
+  m_ex.io.i_flush := m_rmr.io.o_flush | io.b_port.ctrl.hfu_flush
   m_ex.io.b_in <> m_rr.io.b_out
-  m_ex.io.i_exe := m_rf.io.o_state.cur.dc
+  m_ex.io.i_exe := m_rf.io.o_state.cur.hf
 
   // ******************************
   //             CTRL
   // ******************************
-  m_ctrl.io.i_flush := m_rmr.io.o_flush | io.b_port.ctrl.dmu_flush
+  m_ctrl.io.i_flush := m_rmr.io.o_flush | io.b_port.ctrl.hfu_flush
   m_ctrl.io.b_in <> m_ex.io.b_out
   m_ctrl.io.b_dmem <> io.b_dmem
   m_ctrl.io.i_state := m_rf.io.o_state
@@ -76,16 +76,16 @@ class Dmu (p: DmuParams) extends Module {
   // ******************************
   //          RF & BYPASS
   // ******************************
-  m_rf.io.b_read(0) <> m_rr.io.b_dcs(0)
-  m_rf.io.b_read(1) <> m_rr.io.b_dcs(1)
+  m_rf.io.b_read(0) <> m_rr.io.b_hfs(0)
+  m_rf.io.b_read(1) <> m_rr.io.b_hfs(1)
   m_rf.io.b_write <> m_ctrl.io.b_rf
   m_rf.io.i_atl := io.b_port.csr.atl
 
-  m_byp.io.b_dcs(0) <> m_rr.io.b_dcs(0)
-  m_byp.io.i_dcs(0) := m_rf.io.b_read(0).data
-  m_byp.io.b_dcs(1) <> m_rr.io.b_dcs(1)
-  m_byp.io.i_dcs(1) := m_rf.io.b_read(1).data
-  m_byp.io.i_cdc := m_rf.io.o_state.cur.addr
+  m_byp.io.b_hfs(0) <> m_rr.io.b_hfs(0)
+  m_byp.io.i_hfs(0) := m_rf.io.b_read(0).data
+  m_byp.io.b_hfs(1) <> m_rr.io.b_hfs(1)
+  m_byp.io.i_hfs(1) := m_rf.io.b_read(1).data
+  m_byp.io.i_chf := m_rf.io.o_state.cur.addr
   m_byp.io.i_byp(0) := m_ctrl.io.o_byp
   m_byp.io.i_byp(1) := m_ex.io.o_byp
 
@@ -104,12 +104,12 @@ class Dmu (p: DmuParams) extends Module {
   //              I/O
   // ******************************
   // CSRs
-  io.b_port.csr.cdc := m_rf.io.o_state.cur.addr
-  io.b_port.csr.pdc := m_rf.io.o_state.prev.addr
+  io.b_port.csr.chf := m_rf.io.o_state.cur.addr
+  io.b_port.csr.phf := m_rf.io.o_state.prev.addr
 
   // Others
   io.o_state := m_rf.io.o_state
-  io.b_port.ctrl.dmu_free := false.B
+  io.b_port.ctrl.hfu_free := false.B
   io.b_port.ctrl.pipe_flush := m_rmr.io.o_flush
   io.b_port.ctrl.pipe_br := m_rmr.io.o_br_dome
 
@@ -121,6 +121,6 @@ class Dmu (p: DmuParams) extends Module {
   }
 }
 
-object Dmu extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new Dmu(DmuConfigBase), args)
+object Hfu extends App {
+  (new chisel3.stage.ChiselStage).emitVerilog(new Hfu(HfuConfigBase), args)
 }

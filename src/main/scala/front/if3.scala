@@ -1,10 +1,10 @@
 /*
- * File: if3.scala                                                             *
+ * File: if3.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:04:00 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:30:57 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -21,7 +21,7 @@ import chisel3.util._
 import herd.common.gen._
 import herd.common.tools._
 import herd.common.dome._
-import herd.common.isa.base.{INSTR => BASE}
+import herd.common.isa.riscv.{INSTR => RISCV}
 import herd.core.aubrac.common._
 
 
@@ -86,7 +86,7 @@ class If3Stage(p: FrontParams) extends Module {
     val w_is_jal = Wire(Vec(p.nFetchInstr, Bool()))
 
     for (fi <- 0 until p.nFetchInstr) {
-      w_is_jal(fi) := (io.b_in.ctrl.get.instr(fi) === BASE.JAL)
+      w_is_jal(fi) := (io.b_in.ctrl.get.instr(fi) === RISCV.JAL)
     }
 
     // Current informations

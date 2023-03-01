@@ -1,10 +1,10 @@
 /*
- * File: pipeline.scala                                                        *
+ * File: pipeline.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:46:58 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:34:15 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -25,7 +25,7 @@ import herd.core.aubrac.nlp._
 import herd.core.aubrac.front._
 import herd.core.aubrac.back._
 import herd.core.aubrac.back.csr.{CsrMemIO}
-import herd.core.aubrac.dmu._
+import herd.core.aubrac.hfu._
 import herd.core.aubrac.common._
 import herd.io.core.clint.{ClintIO}
 
@@ -39,7 +39,7 @@ class Pipeline (p: PipelineParams) extends Module {
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
-    val b_dmu = if (p.useChamp) Some(Flipped(new DmuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
+    val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
     val b_csr_mem = new CsrMemIO()
@@ -65,8 +65,8 @@ class Pipeline (p: PipelineParams) extends Module {
   
   if (p.useDome) {
     m_front.io.b_hart.get <> io.b_hart.get
-    m_front.io.i_flush := m_back.io.o_flush | io.b_dmu.get.ctrl.pipe_flush
-    m_front.io.i_br_dome.get := io.b_dmu.get.ctrl.pipe_br
+    m_front.io.i_flush := m_back.io.o_flush | io.b_hfu.get.ctrl.pipe_flush
+    m_front.io.i_br_dome.get := io.b_hfu.get.ctrl.pipe_br
   } else {
     m_front.io.i_flush := m_back.io.o_flush
   }
@@ -80,7 +80,7 @@ class Pipeline (p: PipelineParams) extends Module {
   if (p.useDome) {
     m_back.io.b_dome.get <> io.b_dome.get
     m_back.io.b_hart.get <> io.b_hart.get
-    m_back.io.i_flush := io.b_dmu.get.ctrl.pipe_flush
+    m_back.io.i_flush := io.b_hfu.get.ctrl.pipe_flush
   } else {
     m_back.io.i_flush := false.B
   }
@@ -92,7 +92,7 @@ class Pipeline (p: PipelineParams) extends Module {
 
   m_back.io.b_dmem <> io.b_dmem  
   if (p.useCbo) m_back.io.b_cbo.get <> io.b_cbo.get
-  if (p.useChamp) m_back.io.b_dmu.get <> io.b_dmu.get
+  if (p.useChamp) m_back.io.b_hfu.get <> io.b_hfu.get
 
   m_back.io.b_csr_mem <> io.b_csr_mem
   m_back.io.b_clint <> io.b_clint

@@ -1,10 +1,10 @@
 /*
- * File: consts.scala                                                          *
+ * File: consts.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:55 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:31:22 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -189,5 +189,5 @@ object EXT {
   def X     = 0.U(NBIT.W)
 
   def NONE  = 0.U(NBIT.W)
-  def DMU   = 1.U(NBIT.W)
+  def HFU   = 1.U(NBIT.W)
 }

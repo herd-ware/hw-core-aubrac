@@ -1,10 +1,10 @@
 /*
- * File: wb.scala                                                              *
+ * File: wb.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:37:19 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:34:02 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -21,12 +21,12 @@ import chisel3.util._
 import herd.common.gen._
 import herd.common.dome._
 import herd.common.mem.mb4s._
-import herd.common.isa.base._
+import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
 import herd.common.isa.champ.{EXC => CHAMPEXC}
 import herd.core.aubrac.common._
 import herd.core.aubrac.back.csr.{CsrWriteIO}
-import herd.core.aubrac.dmu.{DmuAckIO}
+import herd.core.aubrac.hfu.{HfuAckIO}
 
 
 class WbStage (p: BackParams) extends Module {
@@ -42,7 +42,7 @@ class WbStage (p: BackParams) extends Module {
     val b_in = Flipped(new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit)))
 
     // External units
-    val b_dmu = if (p.useChamp) Some(Flipped(new DmuAckIO(p, p.nAddrBit, p.nDataBit))) else None
+    val b_hfu = if (p.useChamp) Some(Flipped(new HfuAckIO(p, p.nAddrBit, p.nDataBit))) else None
 
     val b_dmem = new Mb4sAckIO(p.pL0DBus)
     val b_csr = Flipped(new CsrWriteIO(p.nDataBit))
@@ -62,7 +62,7 @@ class WbStage (p: BackParams) extends Module {
   val w_lock = Wire(Bool())
 
   val w_wait_dmem = Wire(Bool())
-  val w_wait_dmu = Wire(Bool())
+  val w_wait_hfu = Wire(Bool())
   val w_wait_sload = Wire(Bool())
   
   val w_is_sload = Wire(Bool())
@@ -92,12 +92,12 @@ class WbStage (p: BackParams) extends Module {
   }
   
   if (p.useChamp){
-    w_wait_dmu := io.b_in.valid & (io.b_in.ctrl.get.ext.ext === EXT.DMU) & ~io.b_dmu.get.valid
+    w_wait_hfu := io.b_in.valid & (io.b_in.ctrl.get.ext.ext === EXT.HFU) & ~io.b_hfu.get.valid
   } else {
-    w_wait_dmu := false.B
+    w_wait_hfu := false.B
   }
 
-  w_lock := ~w_back_flush & (w_wait_dmem | w_wait_dmu)
+  w_lock := ~w_back_flush & (w_wait_dmem | w_wait_hfu)
 
   // ******************************
   //            MEMORY
@@ -169,12 +169,12 @@ class WbStage (p: BackParams) extends Module {
   w_res := io.b_in.data.get.res
 
   // ------------------------------
-  //              DMU
+  //              HFU
   // ------------------------------
   if (p.useChamp) {
-    io.b_dmu.get.ready := io.b_in.valid & (io.b_in.ctrl.get.ext.ext === EXT.DMU) & ~w_wait_sload
-    when (io.b_in.ctrl.get.ext.ext === EXT.DMU) {
-      w_res := io.b_dmu.get.data.get
+    io.b_hfu.get.ready := io.b_in.valid & (io.b_in.ctrl.get.ext.ext === EXT.HFU) & ~w_wait_sload
+    when (io.b_in.ctrl.get.ext.ext === EXT.HFU) {
+      w_res := io.b_hfu.get.data.get
     }
   }
 
@@ -243,7 +243,7 @@ class WbStage (p: BackParams) extends Module {
 
   io.o_byp(1).valid := io.b_in.valid & io.b_in.ctrl.get.gpr.en
   io.o_byp(1).hart := io.b_in.ctrl.get.info.hart
-  io.o_byp(1).ready := ~w_lock & ~io.b_in.ctrl.get.lsu.ld & ~w_sload_av & ~(io.b_in.ctrl.get.ext.ext === EXT.DMU)
+  io.o_byp(1).ready := ~w_lock & ~io.b_in.ctrl.get.lsu.ld & ~w_sload_av & ~(io.b_in.ctrl.get.ext.ext === EXT.HFU)
   io.o_byp(1).addr := io.b_in.ctrl.get.gpr.addr
   io.o_byp(1).data := io.b_in.data.get.res
 

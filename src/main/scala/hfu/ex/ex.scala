@@ -1,10 +1,10 @@
 /*
- * File: ex.scala                                                              *
+ * File: ex.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:58:17 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:33:08 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 import chisel3.util._
@@ -23,7 +23,7 @@ import herd.common.isa.champ._
 import herd.core.aubrac.common._
 
 
-class ExStage(p: DmuParams) extends Module {
+class ExStage(p: HfuParams) extends Module {
   val io = IO(new Bundle {
     val i_flush = Input(Bool())
 
@@ -40,17 +40,17 @@ class ExStage(p: DmuParams) extends Module {
   // ******************************
   //        EXECUTION UNITS
   // ******************************
-  val w_dcres_lock = Wire(Bool())
+  val w_hfres_lock = Wire(Bool())
   val w_end = Wire(Bool())
   val w_res = Wire(UInt(p.nDataBit.W))
-  val w_dcres = Wire(new DomeCfgBus(p.pDomeCfg))
+  val w_hfres = Wire(new DomeCfgBus(p.pDomeCfg))
   val w_index = Wire(UInt(7.W))
   val w_check = Wire(Bool())
 
-  w_dcres_lock := io.b_in.ctrl.get.info.lock
+  w_hfres_lock := io.b_in.ctrl.get.info.lock
   w_end := false.B
   w_res := 0.U
-  w_dcres := io.b_in.data.get.s1
+  w_hfres := io.b_in.data.get.s1
   w_index := io.b_in.data.get.s3
   w_check := true.B
 
@@ -60,7 +60,7 @@ class ExStage(p: DmuParams) extends Module {
   when (io.b_in.ctrl.get.op.mv) {
     w_end := true.B
     w_res := 0.U
-    w_dcres := io.b_in.data.get.s1
+    w_hfres := io.b_in.data.get.s1
   }
   
   // ------------------------------
@@ -79,8 +79,8 @@ class ExStage(p: DmuParams) extends Module {
   when (io.b_in.ctrl.get.op.alu_use) {
     w_end := m_alu.io.b_ack.valid
     w_res := m_alu.io.b_ack.data.get.res
-    when (~w_dcres_lock) {
-      w_dcres := m_alu.io.b_ack.data.get.dcres 
+    when (~w_hfres_lock) {
+      w_hfres := m_alu.io.b_ack.data.get.hfres 
     }
   }
 
@@ -102,14 +102,14 @@ class ExStage(p: DmuParams) extends Module {
   m_check.io.b_req.ctrl.get.uop := io.b_in.ctrl.get.op.check_uop
   m_check.io.b_req.ctrl.get.index := w_index
   m_check.io.b_req.data.get.base := m_base.io.o_base
-  m_check.io.b_req.data.get.dcs := io.b_in.data.get.s1
+  m_check.io.b_req.data.get.hfs := io.b_in.data.get.s1
 
   m_check.io.b_ack.ready := true.B
 
   when (io.b_in.ctrl.get.op.check_use) {
     w_end := m_check.io.b_ack.valid
     w_res := m_check.io.b_ack.data.get.res
-    w_dcres := m_check.io.b_ack.data.get.dcres 
+    w_hfres := m_check.io.b_ack.data.get.hfres 
     w_check := m_check.io.b_ack.ctrl.get   
   }
 
@@ -134,7 +134,7 @@ class ExStage(p: DmuParams) extends Module {
 
   m_out.io.b_in.data.get.s2 := io.b_in.data.get.s2
   m_out.io.b_in.data.get.s3 := io.b_in.data.get.s3
-  m_out.io.b_in.data.get.dcres := w_dcres
+  m_out.io.b_in.data.get.hfres := w_hfres
   m_out.io.b_in.data.get.res := w_res
 
   io.b_out <> m_out.io.b_out
@@ -145,7 +145,7 @@ class ExStage(p: DmuParams) extends Module {
   io.o_byp.valid := io.b_in.valid & io.b_in.ctrl.get.rf.en
   io.o_byp.addr := io.b_in.ctrl.get.rf.addr
   io.o_byp.ready := ~io.b_in.ctrl.get.lsu.ld & w_end
-  io.o_byp.data := w_dcres
+  io.o_byp.data := w_hfres
   io.o_byp.full := io.b_in.ctrl.get.info.full | io.b_in.data.get.s1.status.valid | io.b_in.data.get.s1.status.update
   io.o_byp.index := w_index
 
@@ -174,5 +174,5 @@ class ExStage(p: DmuParams) extends Module {
 }
 
 object ExStage extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new ExStage(DmuConfigBase), args)
+  (new chisel3.stage.ChiselStage).emitVerilog(new ExStage(HfuConfigBase), args)
 }

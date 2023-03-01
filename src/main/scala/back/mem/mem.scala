@@ -1,10 +1,10 @@
 /*
- * File: mem.scala                                                             *
+ * File: mem.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:37:24 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:39:50 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -21,7 +21,7 @@ import chisel3.util._
 import herd.common.gen._
 import herd.common.dome._
 import herd.common.mem.mb4s._
-import herd.common.isa.base._
+import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
 import herd.common.isa.champ.{EXC => CHAMPEXC}
 import herd.core.aubrac.common._

@@ -1,10 +1,10 @@
 /*
- * File: consts.scala                                                          *
+ * File: consts.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 06:07:36 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:27:46 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 

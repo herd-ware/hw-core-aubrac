@@ -1,10 +1,10 @@
 /*
- * File: ctrl.scala                                                            *
+ * File: ctrl.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:57:44 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:32:52 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 import chisel3.util._
@@ -32,8 +32,8 @@ object CtrlStageFSM extends ChiselEnum {
   val s0NEW, s1MEM = Value
 }
 
-class CtrlStage(p: DmuParams) extends Module {
-  import herd.core.aubrac.dmu.CtrlStageFSM._
+class CtrlStage(p: HfuParams) extends Module {
+  import herd.core.aubrac.hfu.CtrlStageFSM._
 
   // ******************************
   //              I/O
@@ -44,12 +44,12 @@ class CtrlStage(p: DmuParams) extends Module {
     val b_in = Flipped(new GenRVIO(p, new CtrlStageBus(p), new ResultBus(p)))
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
-    val i_state = Input(new RegFileStateBus(p.nDomeCfg, p.pDomeCfg))
+    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
     val o_byp = Output(new BypassBus(p))
 
     val b_rf = Flipped(new RegFileWriteIO(p))
     val b_rmr = new RmrReqIO(p)
-    val b_ack = new DmuAckIO(p, p.nAddrBit, p.nDataBit)
+    val b_ack = new HfuAckIO(p, p.nAddrBit, p.nDataBit)
   })
 
   val r_fsm = RegInit(s0NEW)
@@ -74,15 +74,15 @@ class CtrlStage(p: DmuParams) extends Module {
   // ******************************
   val w_full = Wire(Bool())
   val w_index = Wire(UInt(7.W))
-  val w_dcres = Wire(new DomeCfgBus(p.pDomeCfg))
-  val w_dcres_lock = Wire(Bool())
+  val w_hfres = Wire(new DomeCfgBus(p.pDomeCfg))
+  val w_hfres_lock = Wire(Bool())
   val w_res = Wire(UInt(p.nDataBit.W))
 
   w_full := io.b_in.ctrl.get.info.full
   w_index := io.b_in.data.get.s3
-  w_dcres := io.b_in.data.get.dcres
-  w_dcres_lock := io.b_in.ctrl.get.info.lock
-  w_res := Mux(w_is_switch, ~io.b_in.data.get.dcres.status.valid, io.b_in.data.get.res)
+  w_hfres := io.b_in.data.get.hfres
+  w_hfres_lock := io.b_in.ctrl.get.info.lock
+  w_res := Mux(w_is_switch, ~io.b_in.data.get.hfres.status.valid, io.b_in.data.get.res)
 
   // ******************************
   //            COUNTER
@@ -120,7 +120,7 @@ class CtrlStage(p: DmuParams) extends Module {
   //             FSM
   // ******************************
   w_valid := io.b_in.valid & ~io.i_flush
-  w_is_mem := w_valid & ((io.b_in.ctrl.get.lsu.ld & ~w_dcres_lock) | io.b_in.ctrl.get.lsu.st)
+  w_is_mem := w_valid & ((io.b_in.ctrl.get.lsu.ld & ~w_hfres_lock) | io.b_in.ctrl.get.lsu.st)
   w_is_switch := w_valid & io.b_in.ctrl.get.rf.sw
   w_check := io.b_in.ctrl.get.info.check
 
@@ -158,9 +158,9 @@ class CtrlStage(p: DmuParams) extends Module {
     r_mem_req := (r_fsm === s1MEM) & m_creq.io.o_flag & ~w_wait_mreq
   }
 
-  w_wait_mreq := w_valid & ((io.b_in.ctrl.get.lsu.ld & ~w_dcres_lock) | io.b_in.ctrl.get.lsu.st) & ~io.b_dmem.req.ready(0) & ~r_mem_req
-  w_wait_mack := w_valid & ((io.b_in.ctrl.get.lsu.ld & ~w_dcres_lock & ~io.b_dmem.read.valid) | (io.b_in.ctrl.get.lsu.st & ~io.b_dmem.write.ready(0)))
-  w_wait_mem := w_valid & (io.b_in.ctrl.get.lsu.ld & ~w_dcres_lock & ~io.b_dmem.read.valid) & (~m_cack.io.o_flag | ~w_wait_mack)
+  w_wait_mreq := w_valid & ((io.b_in.ctrl.get.lsu.ld & ~w_hfres_lock) | io.b_in.ctrl.get.lsu.st) & ~io.b_dmem.req.ready(0) & ~r_mem_req
+  w_wait_mack := w_valid & ((io.b_in.ctrl.get.lsu.ld & ~w_hfres_lock & ~io.b_dmem.read.valid) | (io.b_in.ctrl.get.lsu.st & ~io.b_dmem.write.ready(0)))
+  w_wait_mem := w_valid & (io.b_in.ctrl.get.lsu.ld & ~w_hfres_lock & ~io.b_dmem.read.valid) & (~m_cack.io.o_flag | ~w_wait_mack)
 
 //  w_wait_mreq := w_valid & (io.b_in.ctrl.get.lsu.ld | io.b_in.ctrl.get.lsu.st) & ~r_mem_req
 //  w_wait_mack := w_valid & (~m_creq.io.o_flag | ~((io.b_in.ctrl.get.lsu.ld & io.b_dmem.read.valid) | (io.b_in.ctrl.get.lsu.st & io.b_dmem.write.ready(0))))
@@ -193,48 +193,48 @@ class CtrlStage(p: DmuParams) extends Module {
 
   switch (m_cack.io.o_val) {
     is (0.U) {
-      io.b_dmem.write.data := io.b_in.data.get.dcres.status.toUInt
+      io.b_dmem.write.data := io.b_in.data.get.hfres.status.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
         w_index := CONF.STATUS.U
-        w_dcres.status.fromUInt(io.b_dmem.read.data)
-        w_dcres.status.valid := false.B
-        w_dcres.status.lock := false.B
-        w_dcres.status.update := false.B
+        w_hfres.status.fromUInt(io.b_dmem.read.data)
+        w_hfres.status.valid := false.B
+        w_hfres.status.lock := false.B
+        w_hfres.status.update := false.B
       }
     }
     is (1.U) {
-      io.b_dmem.write.data := io.b_in.data.get.dcres.id.toUInt
+      io.b_dmem.write.data := io.b_in.data.get.hfres.id.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
         w_index := CONF.ID.U
-        w_dcres.id.fromUInt(io.b_dmem.read.data)
+        w_hfres.id.fromUInt(io.b_dmem.read.data)
       }      
     }
     is (2.U) {
-      io.b_dmem.write.data := io.b_in.data.get.dcres.entry
+      io.b_dmem.write.data := io.b_in.data.get.hfres.entry
       when (io.b_in.ctrl.get.lsu.ld) {
         w_index := CONF.ENTRY.U
-        w_dcres.entry := io.b_dmem.read.data
+        w_hfres.entry := io.b_dmem.read.data
       }
     }
     is (3.U) {
-      io.b_dmem.write.data := io.b_in.data.get.dcres.table
+      io.b_dmem.write.data := io.b_in.data.get.hfres.table
       when (io.b_in.ctrl.get.lsu.ld) {
         w_index := CONF.TABLE.U
-        w_dcres.table := io.b_dmem.read.data
+        w_hfres.table := io.b_dmem.read.data
       }
     }
     is (4.U) {
-      io.b_dmem.write.data := io.b_in.data.get.dcres.cap.toUInt
+      io.b_dmem.write.data := io.b_in.data.get.hfres.cap.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
         w_index := CONF.CAP.U
-        w_dcres.cap.fromUInt(io.b_dmem.read.data)
+        w_hfres.cap.fromUInt(io.b_dmem.read.data)
       }
     }
     is (5.U) {
-      io.b_dmem.write.data := io.b_in.data.get.dcres.inst.toUInt
+      io.b_dmem.write.data := io.b_in.data.get.hfres.inst.toUInt
       when (io.b_in.ctrl.get.lsu.ld) {
         w_index := CONF.INST.U
-        w_dcres.inst.fromUInt(io.b_dmem.read.data)
+        w_hfres.inst.fromUInt(io.b_dmem.read.data)
       }
     }
   } 
@@ -268,7 +268,7 @@ class CtrlStage(p: DmuParams) extends Module {
   io.b_rf.addr := io.b_in.ctrl.get.rf.addr
   io.b_rf.full := w_full
   io.b_rf.index := w_index
-  io.b_rf.data := w_dcres
+  io.b_rf.data := w_hfres
 
   io.b_rf.valid := false.B
   switch(r_fsm) {
@@ -286,14 +286,14 @@ class CtrlStage(p: DmuParams) extends Module {
   // ****************************** 
   w_wait_rmr := (r_fsm === s0NEW) & w_valid & ~io.b_rmr.ready
 
-  io.b_rmr.valid := (r_fsm === s0NEW) & w_valid & w_check & ~w_wait_ack & (w_is_switch | (io.b_in.ctrl.get.rf.en & (io.b_rf.addr === io.i_state.fr.addr) & ~w_dcres_lock))
+  io.b_rmr.valid := (r_fsm === s0NEW) & w_valid & w_check & ~w_wait_ack & (w_is_switch | (io.b_in.ctrl.get.rf.en & (io.b_rf.addr === io.i_state.fr.addr) & ~w_hfres_lock))
   io.b_rmr.op := Mux(w_is_switch, RMRUOP.SWITCH, RMRUOP.NOFR)
-  io.b_rmr.dcres := w_dcres
+  io.b_rmr.hfres := w_hfres
 
   when (io.b_in.ctrl.get.info.jump) {
     io.b_rmr.target := io.b_in.data.get.s2
   }.otherwise {
-    io.b_rmr.target := w_dcres.entry
+    io.b_rmr.target := w_hfres.entry
   }
 
   // ******************************
@@ -322,7 +322,7 @@ class CtrlStage(p: DmuParams) extends Module {
   io.o_byp.addr := io.b_in.ctrl.get.rf.addr
   io.o_byp.full := w_full
   io.o_byp.index := w_index
-  io.o_byp.data := w_dcres  
+  io.o_byp.data := w_hfres  
   
   // ******************************
   //            DEBUG
@@ -344,5 +344,5 @@ class CtrlStage(p: DmuParams) extends Module {
 }
 
 object CtrlStage extends App {
-  (new chisel3.stage.ChiselStage).emitVerilog(new CtrlStage(DmuConfigBase), args)
+  (new chisel3.stage.ChiselStage).emitVerilog(new CtrlStage(HfuConfigBase), args)
 }

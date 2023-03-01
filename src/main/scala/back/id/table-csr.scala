@@ -1,10 +1,10 @@
 /*
- * File: table-csr.scala                                                       *
+ * File: table-csr.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:13 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:37:03 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,7 +18,7 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.base.{INSTR => BASE}
+import herd.common.isa.riscv.{INSTR => RISCV}
 import herd.core.aubrac.back.csr.{UOP => CSRUOP}
 
 
@@ -38,16 +38,16 @@ object TABLECSR {
   //                      CSR Ren ?|            |
   //                         |     |            |
   //                         |     |            |
-    BASE.CSRRW0   -> List(  0.B,  1.B,    CSRUOP.W),
-    BASE.CSRRW    -> List(  1.B,  1.B,    CSRUOP.W),
-    BASE.CSRRS0   -> List(  1.B,  0.B,    CSRUOP.S),
-    BASE.CSRRS    -> List(  1.B,  1.B,    CSRUOP.S),
-    BASE.CSRRC0   -> List(  1.B,  0.B,    CSRUOP.C),
-    BASE.CSRRC    -> List(  1.B,  1.B,    CSRUOP.C),
-    BASE.CSRRWI0  -> List(  0.B,  1.B,    CSRUOP.W),
-    BASE.CSRRWI   -> List(  1.B,  1.B,    CSRUOP.W),
-    BASE.CSRRSI0  -> List(  1.B,  0.B,    CSRUOP.S),
-    BASE.CSRRSI   -> List(  1.B,  1.B,    CSRUOP.S),
-    BASE.CSRRCI0  -> List(  1.B,  0.B,    CSRUOP.C),
-    BASE.CSRRCI   -> List(  1.B,  1.B,    CSRUOP.C))
+    RISCV.CSRRW0  -> List(  0.B,  1.B,    CSRUOP.W),
+    RISCV.CSRRW   -> List(  1.B,  1.B,    CSRUOP.W),
+    RISCV.CSRRS0  -> List(  1.B,  0.B,    CSRUOP.S),
+    RISCV.CSRRS   -> List(  1.B,  1.B,    CSRUOP.S),
+    RISCV.CSRRC0  -> List(  1.B,  0.B,    CSRUOP.C),
+    RISCV.CSRRC   -> List(  1.B,  1.B,    CSRUOP.C),
+    RISCV.CSRRWI0 -> List(  0.B,  1.B,    CSRUOP.W),
+    RISCV.CSRRWI  -> List(  1.B,  1.B,    CSRUOP.W),
+    RISCV.CSRRSI0 -> List(  1.B,  0.B,    CSRUOP.S),
+    RISCV.CSRRSI  -> List(  1.B,  1.B,    CSRUOP.S),
+    RISCV.CSRRCI0 -> List(  1.B,  0.B,    CSRUOP.C),
+    RISCV.CSRRCI  -> List(  1.B,  1.B,    CSRUOP.C))
 }

@@ -1,10 +1,10 @@
 /*
- * File: params.scala                                                          *
+ * File: params.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:56:19 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:33:27 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -13,7 +13,7 @@
  */
 
 
-package herd.core.aubrac.dmu
+package herd.core.aubrac.hfu
 
 import chisel3._
 import chisel3.util._
@@ -24,7 +24,7 @@ import herd.common.isa.champ._
 import herd.common.mem.mb4s._
 
 
-trait DmuParams extends GenParams  {
+trait HfuParams extends GenParams  {
   def debug: Boolean
   def pcBoot: String
   def nHart: Int
@@ -33,20 +33,21 @@ trait DmuParams extends GenParams  {
   def nDataByte: Int = (nDataBit / 8).toInt
   
   def useChamp: Boolean
-  def useDome: Boolean = useChamp
-  def multiDome: Boolean = false
+  def nChampReg: Int
   def useChampExtR: Boolean = false
   def useChampExtMie: Boolean
   def useChampExtFr: Boolean
   def useChampExtCst: Boolean
   def nChampTrapLvl: Int
+
+  def useDome: Boolean = useChamp
+  def multiDome: Boolean = false
   def nDome: Int = if (useChampExtFr) 2 else 1
   def nPart: Int
   def nDomeFlushCycle: Int
-  def nDomeField: Int = 6
-  def nDomeBit: Int = nDomeField * nDataBit
+  def nDomeIndex: Int = 6
+  def nDomeBit: Int = nDomeIndex * nDataBit
 
-  def nDomeCfg: Int
   def nBypass: Int = 2
 
   def pDomeCfg: DomeCfgParams = new DomeCfgConfig (
@@ -70,19 +71,19 @@ trait DmuParams extends GenParams  {
   )
 }
 
-case class DmuConfig (
+case class HfuConfig (
   debug: Boolean,
   pcBoot: String,
   nHart: Int,
   nAddrBit: Int,
   nDataBit: Int,
   useChamp: Boolean,
+  nChampReg: Int,
   useChampExtMie: Boolean,
   useChampExtFr: Boolean,
   useChampExtCst: Boolean,
   nChampTrapLvl: Int,
+  
   nPart: Int,
-  nDomeFlushCycle: Int,
-
-  nDomeCfg: Int
-) extends DmuParams
+  nDomeFlushCycle: Int
+) extends HfuParams

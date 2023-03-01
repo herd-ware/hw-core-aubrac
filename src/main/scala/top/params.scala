@@ -1,10 +1,10 @@
 /*
- * File: params.scala                                                          *
+ * File: params.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:53:40 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:34:24 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -22,7 +22,7 @@ import herd.common.mem.mb4s._
 import herd.core.aubrac.nlp._
 import herd.core.aubrac.front._
 import herd.core.aubrac.back._
-import herd.core.aubrac.dmu._
+import herd.core.aubrac.hfu._
 import herd.mem.hay.{HayParams}
 import herd.io.core._
 
@@ -319,11 +319,12 @@ trait AubracParams extends PipelineParams {
   //            CHAMP
   // ------------------------------
   def useChamp: Boolean
-  override def multiDome: Boolean = false
+  def nChampReg: Int
   def useChampExtMie: Boolean
   def useChampExtFr: Boolean
   def useChampExtCst: Boolean
   def nChampTrapLvl: Int
+  
   def nDome: Int = {
     var ndome: Int = 1
     if (useChampExtFr) {
@@ -331,11 +332,11 @@ trait AubracParams extends PipelineParams {
     }
     return ndome
   }
+  override def multiDome: Boolean = false
   def nPart: Int
   def nDomeFlushCycle: Int
-  def nDomeCfg: Int
 
-  def pDmu: DmuParams = new DmuConfig (
+  def pHfu: HfuParams = new HfuConfig (
     debug = debug,
     pcBoot = pcBoot,
     nHart = nHart,
@@ -343,12 +344,13 @@ trait AubracParams extends PipelineParams {
     nDataBit = nDataBit,
 
     useChamp = useChamp,
+    nChampReg = nChampReg,
     useChampExtMie = useChampExtMie,
     useChampExtFr = useChampExtFr,
     useChampExtCst = useChampExtCst,
     nChampTrapLvl = nChampTrapLvl,
+    
     nPart = nPart,
-    nDomeCfg = nDomeCfg,
     nDomeFlushCycle = nDomeFlushCycle
   )
     
@@ -479,7 +481,7 @@ trait AubracParams extends PipelineParams {
   // ..............................
   def pL0DArray: Array[Mb4sParams] = {
     var a: Array[Mb4sParams] = Array(pL0DBus)
-    if (useChamp) a = a :+ pDmu.pL0DBus
+    if (useChamp) a = a :+ pHfu.pL0DBus
     a
   }
   def pL0DCrossBus: Mb4sParams = MB4S.node(pL0DArray, false)
@@ -694,13 +696,14 @@ case class AubracConfig (
   //            CHAMP
   // ------------------------------
   useChamp: Boolean,
+  nChampReg: Int,
   useChampExtMie: Boolean,
   useChampExtFr: Boolean,
   useChampExtCst: Boolean,
   nChampTrapLvl: Int,
+  
   nPart: Int,
   nDomeFlushCycle: Int,
-  nDomeCfg: Int,
 
   // ------------------------------
   //           FRONT END

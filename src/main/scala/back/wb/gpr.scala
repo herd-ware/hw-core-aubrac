@@ -1,10 +1,10 @@
 /*
- * File: gpr.scala                                                             *
+ * File: gpr.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:33 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:37:25 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,7 +18,7 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.base._
+import herd.common.isa.riscv._
 
 
 class GprRMux (p: GprParams) extends Module {

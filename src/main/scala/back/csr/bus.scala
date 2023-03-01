@@ -1,10 +1,10 @@
 /*
- * File: bus.scala                                                             *
+ * File: bus.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:30:07 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:38:31 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 import scala.math._
 
-import herd.common.isa.base.{CsrBus => BaseCsrBus}
+import herd.common.isa.riscv.{CsrBus => RiscvCsrBus}
 import herd.common.isa.priv.{CsrBus => PrivCsrBus}
 import herd.common.isa.champ.{CsrBus => ChampCsrBus}
 import herd.common.isa.count.{CsrBus => CountCsrBus}
@@ -31,7 +31,7 @@ import herd.core.aubrac.common._
 //           REGISTER
 // ******************************
 class CsrBus(nDataBit: Int, useChamp: Boolean) extends Bundle {
-  val base = new BaseCsrBus()
+  val riscv = new RiscvCsrBus()
   val cnt = new CountCsrBus()
   val priv = if (!useChamp) Some(new PrivCsrBus(nDataBit)) else None
   val champ = if (useChamp) Some(new ChampCsrBus(nDataBit)) else None

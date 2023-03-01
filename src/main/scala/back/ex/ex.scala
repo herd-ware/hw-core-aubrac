@@ -1,10 +1,10 @@
 /*
- * File: ex.scala                                                              *
+ * File: ex.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:34:18 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:34:00 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,14 +20,14 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.dome._
-import herd.common.isa.base._
+import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
 import herd.common.isa.champ.{EXC => CHAMPEXC}
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.common._
 import herd.core.aubrac.nlp.{BranchInfoBus}
-import herd.core.aubrac.dmu.{DmuReqCtrlBus,DmuReqDataBus}
+import herd.core.aubrac.hfu.{HfuReqCtrlBus,HfuReqDataBus}
 
 
 class ExStage (p: BackParams) extends Module {
@@ -48,7 +48,7 @@ class ExStage (p: BackParams) extends Module {
 
     val b_dmem = if (!p.useMemStage || (p.nExStage > 1)) Some(new Mb4sReqIO(p.pL0DBus)) else None
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
-    val b_dmu = if (p.useChamp) Some(new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit))) else None
+    val b_hfu = if (p.useChamp) Some(new GenRVIO(p, new HfuReqCtrlBus(p.debug, p.nAddrBit), new HfuReqDataBus(p.nDataBit))) else None
     
     val o_byp = Output(Vec(p.nExStage, new BypassBus(p.nHart, p.nDataBit)))
     val o_br_new = Output(new BranchBus(p.nAddrBit))
@@ -214,24 +214,24 @@ class ExStage (p: BackParams) extends Module {
   }
 
   // ------------------------------
-  //           UNIT: DMU
+  //           UNIT: HFU
   // ------------------------------
   if (p.useChamp) {
-    when (io.b_in.ctrl.get.ext.ext === EXT.DMU) {
-      w_ex0_unit_wait := ~io.b_dmu.get.ready
+    when (io.b_in.ctrl.get.ext.ext === EXT.HFU) {
+      w_ex0_unit_wait := ~io.b_hfu.get.ready
     }
 
-    io.b_dmu.get.valid := w_ex0.valid & (io.b_in.ctrl.get.ext.ext === EXT.DMU) & ~w_ex0_lock & ~w_ex0_flush & ~w_pipe_flush
-    io.b_dmu.get.ctrl.get.code := io.b_in.ctrl.get.ext.code
-    io.b_dmu.get.ctrl.get.op1 := io.b_in.ctrl.get.ext.op1
-    io.b_dmu.get.ctrl.get.op2 := io.b_in.ctrl.get.ext.op2
-    io.b_dmu.get.ctrl.get.op3 := io.b_in.ctrl.get.ext.op3
-    io.b_dmu.get.ctrl.get.dcs1 := io.b_in.ctrl.get.ext.rs1
-    io.b_dmu.get.ctrl.get.dcs2 := io.b_in.ctrl.get.ext.rs2
-    io.b_dmu.get.ctrl.get.wb := io.b_in.ctrl.get.gpr.en
+    io.b_hfu.get.valid := w_ex0.valid & (io.b_in.ctrl.get.ext.ext === EXT.HFU) & ~w_ex0_lock & ~w_ex0_flush & ~w_pipe_flush
+    io.b_hfu.get.ctrl.get.code := io.b_in.ctrl.get.ext.code
+    io.b_hfu.get.ctrl.get.op1 := io.b_in.ctrl.get.ext.op1
+    io.b_hfu.get.ctrl.get.op2 := io.b_in.ctrl.get.ext.op2
+    io.b_hfu.get.ctrl.get.op3 := io.b_in.ctrl.get.ext.op3
+    io.b_hfu.get.ctrl.get.hfs1 := io.b_in.ctrl.get.ext.rs1
+    io.b_hfu.get.ctrl.get.hfs2 := io.b_in.ctrl.get.ext.rs2
+    io.b_hfu.get.ctrl.get.wb := io.b_in.ctrl.get.gpr.en
 
-    io.b_dmu.get.data.get.s2 := w_ex0.data.get.s2
-    io.b_dmu.get.data.get.s3 := w_ex0.data.get.s3
+    io.b_hfu.get.data.get.s2 := w_ex0.data.get.s2
+    io.b_hfu.get.data.get.s3 := w_ex0.data.get.s3
   }
 
   // ------------------------------
@@ -763,7 +763,7 @@ class ExStage (p: BackParams) extends Module {
     // ------------------------------
     //       EXECUTION TRACKER
     // ------------------------------
-    if (p.useChamp) io.b_dmu.get.ctrl.get.etd.get := io.b_in.ctrl.get.etd.get
+    if (p.useChamp) io.b_hfu.get.ctrl.get.etd.get := io.b_in.ctrl.get.etd.get
 
     dontTouch(m_out.io.o_reg.ctrl.get.etd.get)
   }

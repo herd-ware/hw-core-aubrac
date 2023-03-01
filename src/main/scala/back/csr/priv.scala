@@ -1,10 +1,10 @@
 /*
- * File: priv.scala                                                            *
+ * File: priv.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:30:57 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:38:51 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 import scala.math._
 
-import herd.common.isa.base.{CBIE}
+import herd.common.isa.riscv.{CBIE}
 import herd.common.isa.priv._
 import herd.common.isa.priv.CSR._
 import herd.common.isa.count.CSR._
@@ -54,7 +54,7 @@ class Priv(p: CsrParams) extends Module {
   val init_csr = Wire(Vec(p.nHart, new CsrBus(p.nDataBit, false)))
 
   for (h <- 0 until p.nHart) {
-    init_csr(h).base              := DontCare
+    init_csr(h).riscv             := DontCare
 
     init_csr(h).priv.get.mhartid  := h.U
 
@@ -251,9 +251,9 @@ class Priv(p: CsrParams) extends Module {
     for (h <- 0 until p.nHart) {
       io.o_dbg.get(h) := r_csr(h)
       
-      io.o_dbg.get(h).base.cycle    := r_csr(0).cnt.cycle
-      io.o_dbg.get(h).base.time     := r_csr(0).cnt.time
-      io.o_dbg.get(h).base.instret  := r_csr(h).cnt.instret
+      io.o_dbg.get(h).riscv.cycle   := r_csr(0).cnt.cycle
+      io.o_dbg.get(h).riscv.time    := r_csr(0).cnt.time
+      io.o_dbg.get(h).riscv.instret := r_csr(h).cnt.instret
       io.o_dbg.get(h).cnt.cycle     := r_csr(0).cnt.cycle
       io.o_dbg.get(h).cnt.time      := r_csr(0).cnt.time
 

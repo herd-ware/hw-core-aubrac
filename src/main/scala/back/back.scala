@@ -1,10 +1,10 @@
 /*
- * File: back.scala                                                            *
+ * File: back.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:34:48 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:34:05 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -25,7 +25,7 @@ import herd.common.mem.cbo._
 import herd.core.aubrac.common._
 import herd.core.aubrac.nlp.{BranchInfoBus}
 import herd.core.aubrac.back.csr.{Csr, CsrMemIO}
-import herd.core.aubrac.dmu.{Dmu, DmuIO}
+import herd.core.aubrac.hfu.{Hfu, HfuIO}
 import herd.io.core.clint.{ClintIO}
 
 
@@ -45,7 +45,7 @@ class Back (p: BackParams) extends Module {
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
-    val b_dmu = if (p.useChamp) Some(Flipped(new DmuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
+    val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
     val b_csr_mem = new CsrMemIO()
@@ -204,19 +204,19 @@ class Back (p: BackParams) extends Module {
   m_wb.io.b_dmem.write <> io.b_dmem.write
 
   // ******************************
-  //              DMU
+  //              HFU
   // ******************************
   if (p.useChamp) {
-    io.b_dmu.get.ctrl.dmu_flush := m_fsm.io.o_trap.valid
+    io.b_hfu.get.ctrl.hfu_flush := m_fsm.io.o_trap.valid
     when (m_csr.io.b_trap.get(0).valid) {
-      io.b_dmu.get.req <> m_csr.io.b_trap.get(0)
-      m_ex.io.b_dmu.get.ready := false.B
+      io.b_hfu.get.req <> m_csr.io.b_trap.get(0)
+      m_ex.io.b_hfu.get.ready := false.B
     }.otherwise {
-      io.b_dmu.get.req <> m_ex.io.b_dmu.get
+      io.b_hfu.get.req <> m_ex.io.b_hfu.get
       m_csr.io.b_trap.get(0).ready := false.B
     }
-    m_wb.io.b_dmu.get <> io.b_dmu.get.ack
-    m_csr.io.b_dmu.get(0) <> io.b_dmu.get.csr
+    m_wb.io.b_hfu.get <> io.b_hfu.get.ack
+    m_csr.io.b_hfu.get(0) <> io.b_hfu.get.csr
   }
 
   // ******************************

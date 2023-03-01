@@ -1,10 +1,10 @@
 /*
- * File: csr.scala                                                             *
+ * File: csr.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:30:44 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 12:33:57 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -23,7 +23,7 @@ import herd.common.gen._
 import herd.common.dome._
 import herd.common.isa.count.{CsrBus => StatBus}
 import herd.core.aubrac.common._
-import herd.core.aubrac.dmu.{DmuReqCtrlBus, DmuReqDataBus, DmuCsrIO}
+import herd.core.aubrac.hfu.{HfuReqCtrlBus, HfuReqDataBus, HfuCsrIO}
 import herd.io.core.clint.{ClintIO}
 
 
@@ -37,13 +37,13 @@ class Csr(p: CsrParams) extends Module {
 
     val i_trap = Input(Vec(p.nHart, new TrapBus(p.nAddrBit, p.nDataBit)))
     val o_ie = Output(Vec(p.nHart, UInt(p.nDataBit.W)))
-    val b_trap = if (p.useChamp) Some(Vec(p.nHart, new GenRVIO(p, new DmuReqCtrlBus(p.debug, p.nAddrBit), new DmuReqDataBus(p.nDataBit)))) else None
+    val b_trap = if (p.useChamp) Some(Vec(p.nHart, new GenRVIO(p, new HfuReqCtrlBus(p.debug, p.nAddrBit), new HfuReqDataBus(p.nDataBit)))) else None
     val o_br_trap = Output(Vec(p.nHart, new BranchBus(p.nAddrBit)))
 
     val i_stat  = Input(Vec(p.nHart, new StatBus()))
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
     val b_mem = Vec(p.nHart, new CsrMemIO())
-    val b_dmu = if (p.useChamp) Some(Vec(p.nHart, Flipped(new DmuCsrIO(p.nAddrBit, p.nChampTrapLvl)))) else None
+    val b_hfu = if (p.useChamp) Some(Vec(p.nHart, Flipped(new HfuCsrIO(p.nAddrBit, p.nChampTrapLvl)))) else None
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
     val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, p.useChamp)))) else None
@@ -66,7 +66,7 @@ class Csr(p: CsrParams) extends Module {
     m_csr.io.i_stat := io.i_stat
     io.o_decoder := m_csr.io.o_decoder
     m_csr.io.b_mem <> io.b_mem
-    m_csr.io.b_dmu <> io.b_dmu.get
+    m_csr.io.b_hfu <> io.b_hfu.get
     m_csr.io.b_clint <> io.b_clint
 
     if (p.debug) io.o_dbg.get := m_csr.io.o_dbg.get 

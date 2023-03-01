@@ -1,10 +1,10 @@
 /*
- * File: configs.scala                                                         *
+ * File: configs.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:53:33 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-01 09:44:51 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -87,13 +87,14 @@ object AubracConfigBase extends AubracConfig (
   //            CHAMP
   // ------------------------------
   useChamp = true,
+  nChampReg = 4,
   useChampExtMie = true,
   useChampExtFr = false,
   useChampExtCst = true,
   nChampTrapLvl = 2,
+  
   nPart = 2,
   nDomeFlushCycle = 10,
-  nDomeCfg = 4,
 
   // ------------------------------
   //           FRONT END

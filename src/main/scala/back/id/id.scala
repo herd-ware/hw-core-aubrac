@@ -1,10 +1,10 @@
 /*
- * File: id.scala                                                              *
+ * File: id.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:59:05 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-02-28 10:36:53 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.dome._
-import herd.common.isa.base._
+import herd.common.isa.riscv._
 import herd.core.aubrac.common._
 import herd.core.aubrac.back.csr.{CsrDecoderBus}
 
