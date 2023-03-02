@@ -1,10 +1,10 @@
 /*
- * File: bus.scala
+ * File: bus.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:31:30 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 07:26:22 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,6 +18,7 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
+import herd.common.isa.hpc.{HpcInstrBus}
 import herd.common.mem.mb4s.{OP => LSUUOP, AMO => LSUAMO}
 import herd.core.aubrac.front.{FrontBus}
 import herd.core.aubrac.back.csr.{UOP => CSRUOP, CsrBus}
@@ -134,6 +135,8 @@ class ExCtrlBus(p: BackParams) extends Bundle {
   val gpr = new GprCtrlBus()
 
   val ext = new ExtCtrlBus()
+
+  val hpc = new HpcInstrBus()
   
   val etd = if (p.debug) Some(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit)) else None
 }
@@ -148,6 +151,8 @@ class MemCtrlBus(p: BackParams) extends Bundle {
 
   val ext = new ExtCtrlBus()
 
+  val hpc = new HpcInstrBus()
+
   val etd = if (p.debug) Some(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit)) else None
 }
 
@@ -161,6 +166,8 @@ class WbCtrlBus(p: BackParams) extends Bundle {
 
   val ext = new ExtCtrlBus()
 
+  val hpc = new HpcInstrBus()
+
   val etd = if (p.debug) Some(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit)) else None
 }
 
@@ -169,6 +176,8 @@ class SloadCtrlBus(p: BackParams) extends Bundle {
 
   val lsu = new LsuCtrlBus()
   val gpr = UInt(5.W)
+
+  val hpc = new HpcInstrBus()
   
   val etd = if (p.debug) Some(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit)) else None
 }
@@ -215,50 +224,4 @@ class BackDbgBus (p: BackParams) extends Bundle {
   val last = UInt(p.nAddrBit.W)
   val x = Vec(32, UInt(p.nDataBit.W))
   val csr = new CsrBus(p.nDataBit, p.useChamp)
-}
-
-// ******************************
-//          DATA FOOTPRINT 
-// ******************************
-class IdDfpBus (p: BackParams) extends DfpBaseBus(p.nAddrBit, p.nInstrBit) {
-  val wire = Vec(p.nDfpIdWire, UInt(p.nDataBit.W))
-
-  val s1 = UInt(p.nDataBit.W)
-  val s2 = UInt(p.nDataBit.W)
-  val s3 = UInt(p.nDataBit.W)
-}
-
-class ExDfpBus (p: BackParams) extends Bundle {  
-  val pc = Vec(p.nExStage, UInt(p.nAddrBit.W))
-  val instr = Vec(p.nExStage, UInt(p.nInstrBit.W))
-  val s1 = Vec(p.nExStage, UInt(p.nDataBit.W))
-  val s3 = Vec(p.nExStage, UInt(p.nDataBit.W))
-  val res = Vec(p.nExStage, UInt(p.nDataBit.W))
-}
-
-class MemDfpBus (p: BackParams) extends DfpBaseBus(p.nAddrBit, p.nInstrBit) {
-  val s1 = UInt(p.nDataBit.W)
-  val s3 = UInt(p.nDataBit.W)
-  val res = UInt(p.nDataBit.W)
-}
-
-class WbDfpBus (p: BackParams) extends DfpBaseBus(p.nAddrBit, p.nInstrBit) {
-  val rback = if (p.useExtA) Some(UInt(p.nDataBit.W)) else None
-  val res = UInt(p.nDataBit.W)
-}
-
-class GprDfpBus (p: GprParams) extends Bundle {
-  val gpr = Vec(p.nHart, Vec(32, UInt(p.nDataBit.W)))
-  val wire = Vec(p.nDfpGprWire, UInt(p.nDataBit.W))
-}
-
-class BackDfpBus (p: BackParams) extends Bundle {
-  val id = new IdDfpBus(p)
-  val ex = new ExDfpBus(p)
-  val mem = if (p.useMemStage) Some(new MemDfpBus(p)) else None
-  val wb = new WbDfpBus(p)
-  val gpr = new GprDfpBus(p)
-  
-  val alu = if (p.nExStage > 1) Some(UInt(p.nDataBit.W)) else None
-  val muldiv = if (p.useExtM) Some(new MulDivDfpBus(p.nDataBit, (p.nExStage > 2))) else None
 }

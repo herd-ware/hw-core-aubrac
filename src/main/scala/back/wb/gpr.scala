@@ -1,10 +1,10 @@
 /*
- * File: gpr.scala
+ * File: gpr.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:37:25 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 06:07:53 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -162,9 +162,7 @@ class Gpr(p : GprParams) extends Module {
     val b_write = Vec(p.nGprWriteLog, new GprWriteIO(p))
     val i_byp = Input(Vec(p.nGprBypass, new BypassBus(p.nHart, p.nDataBit)))
 
-    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, Vec(32, UInt(p.nDataBit.W))))) else None
-    val o_dfp = if (p.debug) Some(Output(new GprDfpBus(p))) else None
-  
+    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, Vec(32, UInt(p.nDataBit.W))))) else None  
   })
 
   val r_gpr = Reg(Vec(p.nHart, Vec(32, UInt(p.nDataBit.W))))
@@ -223,15 +221,21 @@ class Gpr(p : GprParams) extends Module {
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
+    val w_dfp = Wire(new Bundle {
+      val gpr = Vec(p.nHart, Vec(32, UInt(p.nDataBit.W)))
+      val wire = Vec(p.nGprReadPhy, UInt(p.nDataBit.W))
+    })
+
     for (r <- 0 until p.nGprReadPhy) {
-      io.o_dfp.get.wire(r) := m_rmux.io.b_phy(r).data
+      w_dfp.wire(r) := m_rmux.io.b_phy(r).data
     }
     for (h <- 0 until p.nHart) {
       for (i <- 0 until 32) {
-        io.o_dfp.get.gpr(h)(i) := r_gpr(h)(i)
+        w_dfp.gpr(h)(i) := r_gpr(h)(i)
       }
     }
 
+    dontTouch(w_dfp)
   }
 }
 

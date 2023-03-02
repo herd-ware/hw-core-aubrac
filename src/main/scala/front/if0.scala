@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:50 pm                                       *
+ * Last Modified: 2023-03-02 06:01:39 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -40,9 +40,6 @@ class If0Stage(p: FrontParams) extends Module {
 
     // Output data buses
     val b_out = new GenRVIO(p, new If0CtrlBus(p.debug, p.nAddrBit, p.nFetchInstr), UInt(0.W))
-
-    // Debug buses
-    val o_dfp = if (p.debug) Some(Output(UInt(p.nAddrBit.W))) else None
   })
 
   val w_lock = Wire(Bool())
@@ -156,7 +153,13 @@ class If0Stage(p: FrontParams) extends Module {
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
-    io.o_dfp.get := r_out.ctrl.get.pc
+    val w_dfp = Wire(new Bundle {
+      val pc = UInt(p.nAddrBit.W)
+    })
+
+    w_dfp.pc := r_out.ctrl.get.pc
+
+    dontTouch(w_dfp)
 
     // ------------------------------
     //       EXECUTION TRACKER

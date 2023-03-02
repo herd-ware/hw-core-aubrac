@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:57 pm                                       *
+ * Last Modified: 2023-03-02 06:04:10 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -43,9 +43,6 @@ class If2Stage(p: FrontParams) extends Module {
 
     // Output data buses
     val b_out = new GenRVIO(p, new If3CtrlBus(p.debug, p.nAddrBit, p.nFetchInstr, p.nInstrBit), UInt(0.W)) 
-    
-    // Debug bus
-    val o_dfp = if (p.debug && p.useIf2Stage) Some(Output(new If2DfpBus(p.nAddrBit, p.nFetchInstr, p.nInstrBit))) else None
   })
 
   val w_lock = Wire(Bool())
@@ -148,9 +145,16 @@ class If2Stage(p: FrontParams) extends Module {
     //         DATA FOOTPRINT
     // ------------------------------
     if (p.useIf2Stage) {
-      io.o_dfp.get.pc := m_out.get.io.o_val.ctrl.get.pc
-      io.o_dfp.get.instr := m_out.get.io.o_val.ctrl.get.instr  
-    }  
+      val w_dfp = Wire(new Bundle {
+        val pc = UInt(p.nAddrBit.W)
+        val instr = Vec(p.nFetchInstr, UInt(p.nInstrBit.W))
+      })
+
+      w_dfp.pc := m_out.get.io.o_val.ctrl.get.pc
+      w_dfp.instr := m_out.get.io.o_val.ctrl.get.instr  
+
+      dontTouch(w_dfp)
+    }      
 
     // ------------------------------
     //       EXECUTION TRACKER

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 12:22:17 pm                                       *
+ * Last Modified: 2023-03-02 07:28:01 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -21,6 +21,7 @@ import chisel3.util._
 import herd.common.gen._
 import herd.common.field._
 import herd.common.mem.mb4s._
+import herd.common.isa.hpc.{HpcPipelineBus}
 import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
 import herd.common.isa.champ.{EXC => CHAMPEXC}
@@ -49,10 +50,9 @@ class WbStage (p: BackParams) extends Module {
     val b_rd = Flipped(new GprWriteIO(p))
     val o_byp = Output(Vec(2, new BypassBus(p.nHart, p.nDataBit)))
 
-    val o_instret = Output(Bool())
+    val o_hpc = Output(new HpcPipelineBus())
 
     val o_last = Output(new BranchBus(p.nAddrBit))
-    val o_dfp = if (p.debug) Some(Output(new WbDfpBus(p))) else None
     val o_etd = if (p.debug) Some(Output(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit))) else None
   })
 
@@ -114,6 +114,7 @@ class WbStage (p: BackParams) extends Module {
   m_sload.io.b_in.ctrl.get.info := io.b_in.ctrl.get.info
   m_sload.io.b_in.ctrl.get.gpr := io.b_in.ctrl.get.gpr.addr
   m_sload.io.b_in.ctrl.get.lsu := io.b_in.ctrl.get.lsu
+  m_sload.io.b_in.ctrl.get.hpc := io.b_in.ctrl.get.hpc
   if (p.useExtA) {
     m_sload.io.b_in.data.get := m_rdmem.get.io.b_sout.data.get
   } else {
@@ -218,19 +219,27 @@ class WbStage (p: BackParams) extends Module {
   // ******************************
   //              CSR
   // ******************************
-  // ------------------------------
-  //             WRITE
-  // ------------------------------
   io.b_csr.valid := io.b_in.valid & io.b_in.ctrl.get.csr.write & ~w_wait_sload
   io.b_csr.addr := io.b_in.data.get.s3(11,0)
   io.b_csr.uop := io.b_in.ctrl.get.csr.uop
   io.b_csr.data := io.b_in.data.get.res
   io.b_csr.mask := io.b_in.data.get.s1
 
-  // ------------------------------
-  //           INFORMATION
-  // ------------------------------
-  io.o_instret := ((io.b_in.valid & ~w_is_sload) | w_sload_av) & ~w_lock
+  // ******************************
+  //              HPC
+  // ******************************
+  io.o_hpc := 0.U.asTypeOf(io.o_hpc)
+
+  when (~w_lock) {
+    when (w_sload_av) {
+      io.o_hpc.instret := 1.U
+      io.o_hpc.ld := 1.U
+      io.o_hpc.st := m_sload.io.b_out.ctrl.get.hpc.st
+    }.elsewhen(io.b_in.valid & ~w_is_sload) {
+      io.o_hpc := io.b_in.ctrl.get.hpc
+      io.o_hpc.instret := 1.U
+    }
+  }
 
   // ******************************
   //             BYPASS
@@ -336,11 +345,20 @@ class WbStage (p: BackParams) extends Module {
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
-    if (p.useExtA) io.o_dfp.get.rback.get := DontCare
+    val w_dfp = Wire(new Bundle {
+      val pc = UInt(p.nAddrBit.W)
+      val instr = UInt(p.nInstrBit.W)
+      
+      val rback = if (p.useExtA) Some(UInt(p.nDataBit.W)) else None
+      val res = UInt(p.nDataBit.W)
+    })
 
-    io.o_dfp.get.pc := m_sload.io.o_reg.ctrl.get.info.pc
-    io.o_dfp.get.instr := m_sload.io.o_reg.ctrl.get.info.instr
-    io.o_dfp.get.res := m_sload.io.o_reg.data.get
+    w_dfp.pc := m_sload.io.o_reg.ctrl.get.info.pc
+    w_dfp.instr := m_sload.io.o_reg.ctrl.get.info.instr
+    if (p.useExtA) w_dfp.rback.get := DontCare
+    w_dfp.res := m_sload.io.o_reg.data.get
+
+    dontTouch(w_dfp)
 
     // ------------------------------
     //       EXECUTION TRACKER

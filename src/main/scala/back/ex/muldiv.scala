@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:47 pm                                       *
+ * Last Modified: 2023-03-02 05:53:05 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -143,8 +143,6 @@ class MulDiv (p: GenParams, nDataBit: Int, isPipe: Boolean, useExt: Boolean, nMu
     val o_free = Output(Bool())
 
     val b_port = new IntUnitIO(p, 1, 0, nDataBit)
-
-    val o_dfp = if (p.debug) Some(Output(new MulDivDfpBus(nDataBit, isPipe))) else None
   })
 
   val w_end = Wire(Bool())
@@ -504,16 +502,25 @@ class MulDiv (p: GenParams, nDataBit: Int, isPipe: Boolean, useExt: Boolean, nMu
   // ******************************
   //             DEBUG
   // ******************************
-  if (p.debug) {
-    
+  if (p.debug) {    
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
-    io.o_dfp.get.us1 := m_src.io.o_reg.data.get.us1
-    io.o_dfp.get.us2 := m_src.io.o_reg.data.get.us2
-    io.o_dfp.get.ulquo := m_tmp.io.o_reg.data.get.ulquo
-    io.o_dfp.get.uhrem := m_tmp.io.o_reg.data.get.uhrem
-    if (isPipe) io.o_dfp.get.res.get := m_ack.io.o_reg.data.get
+    val w_dfp = Wire(new Bundle {
+      val us1 = UInt(nDataBit.W)
+      val us2 = UInt(nDataBit.W)
+      val ulquo = UInt(nDataBit.W)
+      val uhrem = UInt(nDataBit.W)
+      val res = if (isPipe) Some(UInt(nDataBit.W)) else None
+    })
+
+    w_dfp.us1 := m_src.io.o_reg.data.get.us1
+    w_dfp.us2 := m_src.io.o_reg.data.get.us2
+    w_dfp.ulquo := m_tmp.io.o_reg.data.get.ulquo
+    w_dfp.uhrem := m_tmp.io.o_reg.data.get.uhrem
+    if (isPipe) w_dfp.res.get := m_ack.io.o_reg.data.get
+
+    dontTouch(w_dfp)
   }
 }
 

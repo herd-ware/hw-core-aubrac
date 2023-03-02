@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 12:21:55 pm                                       *
+ * Last Modified: 2023-03-02 07:23:27 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -45,8 +45,6 @@ class MemStage (p: BackParams) extends Module {
     val o_byp = Output(new BypassBus(p.nHart, p.nDataBit))
 
     val b_out = new GenRVIO(p, new WbCtrlBus(p), new ResultBus(p.nDataBit))
-    
-    val o_dfp = if (p.debug) Some(Output(new MemDfpBus(p))) else None
   })
 
   val w_flush = Wire(Bool())
@@ -177,6 +175,7 @@ class MemStage (p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.csr := io.b_in.ctrl.get.csr
   m_out.io.b_in.ctrl.get.gpr := io.b_in.ctrl.get.gpr
   m_out.io.b_in.ctrl.get.ext := io.b_in.ctrl.get.ext
+  m_out.io.b_in.ctrl.get.hpc := io.b_in.ctrl.get.hpc
 
   m_out.io.b_in.data.get.s1 := io.b_in.data.get.s1
   m_out.io.b_in.data.get.s3 := io.b_in.data.get.s3
@@ -225,11 +224,21 @@ class MemStage (p: BackParams) extends Module {
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
-    io.o_dfp.get.pc := m_out.io.o_val.ctrl.get.info.pc
-    io.o_dfp.get.instr := m_out.io.o_val.ctrl.get.info.instr
-    io.o_dfp.get.s1 := m_out.io.o_reg.data.get.s1
-    io.o_dfp.get.s3 := m_out.io.o_reg.data.get.s3
-    io.o_dfp.get.res := m_out.io.o_reg.data.get.res    
+    val w_dfp = Wire(new Bundle {
+      val pc = UInt(p.nAddrBit.W)
+      val instr = UInt(p.nInstrBit.W)
+      val s1 = UInt(p.nDataBit.W)
+      val s3 = UInt(p.nDataBit.W)
+      val res = UInt(p.nDataBit.W)
+    })
+
+    w_dfp.pc := m_out.io.o_val.ctrl.get.info.pc
+    w_dfp.instr := m_out.io.o_val.ctrl.get.info.instr
+    w_dfp.s1 := m_out.io.o_reg.data.get.s1
+    w_dfp.s3 := m_out.io.o_reg.data.get.s3
+    w_dfp.res := m_out.io.o_reg.data.get.res    
+
+    dontTouch(w_dfp)
     
     // ------------------------------
     //       EXECUTION TRACKER

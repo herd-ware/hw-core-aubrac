@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:35:20 pm                                       *
+ * Last Modified: 2023-03-02 05:58:36 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -62,8 +62,6 @@ trait GprParams{
   def nGprReadLog: Int
   def nGprWriteLog: Int
   def nGprBypass: Int
-  
-  def nDfpGprWire: Int = nGprReadPhy
 }
 
 case class GprConfig (
@@ -118,8 +116,6 @@ trait BackParams extends GprParams
     }
     return nbyp
   }
-
-  def nDfpIdWire: Int = 2
 
   def pL0DBus: Mb4sParams = new Mb4sConfig (
     debug = debug,

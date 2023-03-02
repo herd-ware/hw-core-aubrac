@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:00:07 pm                                       *
+ * Last Modified: 2023-03-02 05:59:13 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -52,12 +52,4 @@ class EtdBus(nHart: Int, nAddrBit: Int, nInstrBit: Int) extends Bundle {
   val tstart = UInt(64.W)
   val tend = UInt(64.W)
   val daddr = UInt(nAddrBit.W)
-}
-
-// ******************************
-//         DATA FOOTPRINT
-// ******************************
-class DfpBaseBus (nAddrBit: Int, nInstrBit: Int) extends Bundle {
-  val pc = UInt(nAddrBit.W)
-  val instr = UInt(nInstrBit.W)
 }

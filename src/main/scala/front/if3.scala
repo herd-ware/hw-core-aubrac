@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 01:17:48 pm                                       *
+ * Last Modified: 2023-03-02 06:06:31 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -43,9 +43,6 @@ class If3Stage(p: FrontParams) extends Module {
 
     // Output data buses
     val b_out = Vec(p.nBackPort, new GenRVIO(p, new FrontBus(p.debug, p.nAddrBit, p.nInstrBit), UInt(0.W)))
-  
-    // Debug bus
-    val o_dfp = if (p.debug) Some(Output(Vec(p.nFetchBufferDepth, new DfpBaseBus(p.nAddrBit, p.nInstrBit)))) else None
   })
 
   val w_lock = Wire(Bool())
@@ -182,10 +179,17 @@ class If3Stage(p: FrontParams) extends Module {
     // ------------------------------
     if (p.debug) {
       // Data Footprint
+      val w_dfp = Wire(Vec(p.nFetchBufferDepth, new Bundle {
+        val pc = UInt(p.nAddrBit.W)
+        val instr = UInt(p.nInstrBit.W)
+      }))
+
       for (fb <- 0 until p.nFetchBufferDepth) {
-        io.o_dfp.get(fb).pc := m_buf.io.o_val(fb).ctrl.get.pc
-        io.o_dfp.get(fb).instr := m_buf.io.o_val(fb).ctrl.get.instr
+        w_dfp(fb).pc := m_buf.io.o_val(fb).ctrl.get.pc
+        w_dfp(fb).instr := m_buf.io.o_val(fb).ctrl.get.instr
       } 
+
+      dontTouch(w_dfp)      
 
       // Time Tracker
       for (fi <- 0 until p.nFetchInstr) {
@@ -231,10 +235,17 @@ class If3Stage(p: FrontParams) extends Module {
     // ------------------------------   
     if (p.debug) {
       // Data Footprint
-      io.o_dfp.get(0).pc := m_buf.io.b_out.ctrl.get.pc
-      io.o_dfp.get(0).instr := m_buf.io.b_out.ctrl.get.instr
+      val w_dfp = Wire(new Bundle {
+        val pc = UInt(p.nAddrBit.W)
+        val instr = UInt(p.nInstrBit.W)
+      })
 
-      // Time Tracker
+      w_dfp.pc := m_buf.io.b_out.ctrl.get.pc
+      w_dfp.instr := m_buf.io.b_out.ctrl.get.instr
+
+      dontTouch(w_dfp)
+
+      // Execution Tracker
       m_buf.io.b_in.ctrl.get.etd.get := io.b_in.ctrl.get.etd.get(0)
 
       dontTouch(m_buf.io.b_out.ctrl.get.etd.get)

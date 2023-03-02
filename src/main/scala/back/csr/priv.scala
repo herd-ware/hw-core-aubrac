@@ -1,10 +1,10 @@
 /*
- * File: priv.scala
+ * File: priv.scala                                                            *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:38:51 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 07:02:03 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -22,8 +22,8 @@ import scala.math._
 import herd.common.isa.riscv.{CBIE}
 import herd.common.isa.priv._
 import herd.common.isa.priv.CSR._
-import herd.common.isa.count.CSR._
-import herd.common.isa.count.{CsrBus => StatBus}
+import herd.common.isa.hpc.CSR._
+import herd.common.isa.hpc.{HpcPipelineBus, HpcMemoryBus}
 import herd.common.isa.custom.CSR._
 import herd.core.aubrac.common._
 import herd.io.core.clint.{ClintIO}
@@ -40,9 +40,10 @@ class Priv(p: CsrParams) extends Module {
     val o_ie = Output(Vec(p.nHart, UInt(p.nDataBit.W)))
     val o_br_trap = Output(Vec(p.nHart, new BranchBus(p.nAddrBit)))
 
-    val i_stat  = Input(Vec(p.nHart, new StatBus()))
+    val i_hpc_pipe = Input(Vec(p.nHart, new HpcPipelineBus()))
+    val i_hpc_mem = Input(Vec(p.nHart, new HpcMemoryBus()))
+
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
-    val b_mem = Vec(p.nHart, new CsrMemIO())
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
     val o_dbg = if(p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, false)))) else None
@@ -71,36 +72,36 @@ class Priv(p: CsrParams) extends Module {
     init_csr(h).priv.get.mip      := DontCare
     init_csr(h).priv.get.menvcfg  := DontCare
 
-    init_csr(h).cnt.cycle         := 0.U
-    init_csr(h).cnt.time          := 0.U
-    init_csr(h).cnt.instret       := 0.U
-    init_csr(h).cnt.alu           := 0.U
-    init_csr(h).cnt.ld            := 0.U
-    init_csr(h).cnt.st            := 0.U
-    init_csr(h).cnt.br            := 0.U
-    init_csr(h).cnt.mispred       := 0.U
-    init_csr(h).cnt.l1imiss       := 0.U
-    init_csr(h).cnt.l1dmiss       := 0.U
-    init_csr(h).cnt.l2miss        := 0.U
+    init_csr(h).hpc.cycle         := 0.U
+    init_csr(h).hpc.time          := 0.U
+    init_csr(h).hpc.instret       := 0.U
+    init_csr(h).hpc.alu           := 0.U
+    init_csr(h).hpc.ld            := 0.U
+    init_csr(h).hpc.st            := 0.U
+    init_csr(h).hpc.br            := 0.U
+    init_csr(h).hpc.mispred       := 0.U
+    init_csr(h).hpc.l1imiss       := 0.U
+    init_csr(h).hpc.l1dmiss       := 0.U
+    init_csr(h).hpc.l2miss        := 0.U
   }
 
   val r_csr = RegInit(init_csr)
 
   // ******************************
-  //            COUNTERS
+  //             HPC
   // ******************************
   for (h <- 0 until p.nHart) {
-    r_csr(h).cnt.cycle    := r_csr(h).cnt.cycle + 1.U
-    r_csr(h).cnt.time     := r_csr(h).cnt.time + 1.U
-    r_csr(h).cnt.instret  := r_csr(h).cnt.instret + io.i_stat(h).instret
-    r_csr(h).cnt.alu      := r_csr(h).cnt.alu + io.i_stat(h).alu
-    r_csr(h).cnt.ld       := r_csr(h).cnt.ld + io.i_stat(h).ld
-    r_csr(h).cnt.st       := r_csr(h).cnt.st + io.i_stat(h).st
-    r_csr(h).cnt.br       := r_csr(h).cnt.br + io.i_stat(h).br
-    r_csr(h).cnt.mispred  := r_csr(h).cnt.mispred + io.i_stat(h).mispred
-    r_csr(h).cnt.l1imiss  := r_csr(h).cnt.l1imiss + io.b_mem(h).l1imiss
-    r_csr(h).cnt.l1dmiss  := r_csr(h).cnt.l1dmiss + io.b_mem(h).l1dmiss
-    r_csr(h).cnt.l2miss   := r_csr(h).cnt.l2miss + io.b_mem(h).l2miss
+    r_csr(h).hpc.cycle    := r_csr(h).hpc.cycle + 1.U
+    r_csr(h).hpc.time     := r_csr(h).hpc.time + 1.U
+    r_csr(h).hpc.instret  := r_csr(h).hpc.instret + io.i_hpc_pipe(h).instret
+    r_csr(h).hpc.alu      := r_csr(h).hpc.alu + io.i_hpc_pipe(h).alu
+    r_csr(h).hpc.ld       := r_csr(h).hpc.ld + io.i_hpc_pipe(h).ld
+    r_csr(h).hpc.st       := r_csr(h).hpc.st + io.i_hpc_pipe(h).st
+    r_csr(h).hpc.br       := r_csr(h).hpc.br + io.i_hpc_pipe(h).br
+    r_csr(h).hpc.mispred  := r_csr(h).hpc.mispred + io.i_hpc_pipe(h).mispred
+    r_csr(h).hpc.l1imiss  := r_csr(h).hpc.l1imiss + io.i_hpc_mem(h).l1imiss
+    r_csr(h).hpc.l1dmiss  := r_csr(h).hpc.l1dmiss + io.i_hpc_mem(h).l1dmiss
+    r_csr(h).hpc.l2miss   := r_csr(h).hpc.l2miss + io.i_hpc_mem(h).l2miss
   }
 
   // ******************************
@@ -208,28 +209,28 @@ class Priv(p: CsrParams) extends Module {
         is (MTVAL.U)      {io.b_read(h).data := r_csr(h).priv.get.mtval}
         is (MIP.U)        {io.b_read(h).data := io.b_clint(h).ip}
 
-        is (CYCLE.U)      {io.b_read(h).data := r_csr(0).cnt.cycle((p.nDataBit - 1),0)}
-        is (TIME.U)       {io.b_read(h).data := r_csr(0).cnt.time((p.nDataBit - 1),0)}
-        is (INSTRET.U)    {io.b_read(h).data := r_csr(h).cnt.instret((p.nDataBit - 1),0)}
-        is (BR.U)         {io.b_read(h).data := r_csr(h).cnt.br((p.nDataBit - 1),0)}
-        is (MISPRED.U)    {io.b_read(h).data := r_csr(h).cnt.mispred((p.nDataBit - 1),0)}
-        is (L1IMISS.U)    {io.b_read(h).data := r_csr(h).cnt.l1imiss((p.nDataBit - 1),0)}
-        is (L1DMISS.U)    {io.b_read(h).data := r_csr(h).cnt.l1dmiss((p.nDataBit - 1),0)}
-        is (L2MISS.U)     {io.b_read(h).data := r_csr(h).cnt.l2miss((p.nDataBit - 1),0)}
+        is (CYCLE.U)      {io.b_read(h).data := r_csr(0).hpc.cycle((p.nDataBit - 1),0)}
+        is (TIME.U)       {io.b_read(h).data := r_csr(0).hpc.time((p.nDataBit - 1),0)}
+        is (INSTRET.U)    {io.b_read(h).data := r_csr(h).hpc.instret((p.nDataBit - 1),0)}
+        is (BR.U)         {io.b_read(h).data := r_csr(h).hpc.br((p.nDataBit - 1),0)}
+        is (MISPRED.U)    {io.b_read(h).data := r_csr(h).hpc.mispred((p.nDataBit - 1),0)}
+        is (L1IMISS.U)    {io.b_read(h).data := r_csr(h).hpc.l1imiss((p.nDataBit - 1),0)}
+        is (L1DMISS.U)    {io.b_read(h).data := r_csr(h).hpc.l1dmiss((p.nDataBit - 1),0)}
+        is (L2MISS.U)     {io.b_read(h).data := r_csr(h).hpc.l2miss((p.nDataBit - 1),0)}
       }
 
       if (p.nDataBit == 32) {
         switch (io.b_read(h).addr) {
           is (MSTATUSH.U)   {io.b_read(h).data := r_csr(h).priv.get.mstatus(63,32)}
 
-          is (CYCLEH.U)     {io.b_read(h).data := r_csr(0).cnt.cycle(63,32)}
-          is (TIMEH.U)      {io.b_read(h).data := r_csr(0).cnt.time(63,32)}
-          is (INSTRETH.U)   {io.b_read(h).data := r_csr(h).cnt.instret(63,32)}
-          is (BRH.U)        {io.b_read(h).data := r_csr(h).cnt.br(63,32)}
-          is (MISPREDH.U)   {io.b_read(h).data := r_csr(h).cnt.mispred(63,32)}
-          is (L1IMISSH.U)   {io.b_read(h).data := r_csr(h).cnt.l1imiss(63,32)}
-          is (L1DMISSH.U)   {io.b_read(h).data := r_csr(h).cnt.l1dmiss(63,32)}
-          is (L2MISSH.U)    {io.b_read(h).data := r_csr(h).cnt.l2miss(63,32)}
+          is (CYCLEH.U)     {io.b_read(h).data := r_csr(0).hpc.cycle(63,32)}
+          is (TIMEH.U)      {io.b_read(h).data := r_csr(0).hpc.time(63,32)}
+          is (INSTRETH.U)   {io.b_read(h).data := r_csr(h).hpc.instret(63,32)}
+          is (BRH.U)        {io.b_read(h).data := r_csr(h).hpc.br(63,32)}
+          is (MISPREDH.U)   {io.b_read(h).data := r_csr(h).hpc.mispred(63,32)}
+          is (L1IMISSH.U)   {io.b_read(h).data := r_csr(h).hpc.l1imiss(63,32)}
+          is (L1DMISSH.U)   {io.b_read(h).data := r_csr(h).hpc.l1dmiss(63,32)}
+          is (L2MISSH.U)    {io.b_read(h).data := r_csr(h).hpc.l2miss(63,32)}
         }
       }
     }
@@ -251,13 +252,13 @@ class Priv(p: CsrParams) extends Module {
     for (h <- 0 until p.nHart) {
       io.o_dbg.get(h) := r_csr(h)
       
-      io.o_dbg.get(h).riscv.cycle   := r_csr(0).cnt.cycle
-      io.o_dbg.get(h).riscv.time    := r_csr(0).cnt.time
-      io.o_dbg.get(h).riscv.instret := r_csr(h).cnt.instret
-      io.o_dbg.get(h).cnt.cycle     := r_csr(0).cnt.cycle
-      io.o_dbg.get(h).cnt.time      := r_csr(0).cnt.time
+      io.o_dbg.get(h).riscv.cycle   := r_csr(0).hpc.cycle
+      io.o_dbg.get(h).riscv.time    := r_csr(0).hpc.time
+      io.o_dbg.get(h).riscv.instret := r_csr(h).hpc.instret
+      io.o_dbg.get(h).hpc.cycle     := r_csr(0).hpc.cycle
+      io.o_dbg.get(h).hpc.time      := r_csr(0).hpc.time
 
-      dontTouch(r_csr(h).cnt)
+      dontTouch(r_csr(h).hpc)
     }
   }
 }

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 12:21:43 pm                                       *
+ * Last Modified: 2023-03-02 07:19:44 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -116,8 +116,6 @@ class IdStage(p: BackParams) extends Module {
     val b_rs = Vec(2, Flipped(new GprReadIO(p)))
 
     val b_out = new GenRVIO(p, new ExCtrlBus(p), new DataBus(p.nDataBit))
-
-    val o_dfp = if (p.debug) Some(Output(new IdDfpBus(p))) else None
   })
   
   val w_lock = Wire(Bool())
@@ -291,6 +289,13 @@ class IdStage(p: BackParams) extends Module {
 
   m_out.io.b_in.ctrl.get.ext := m_decoder.io.o_ext
 
+  m_out.io.b_in.ctrl.get.hpc.instret := false.B
+  m_out.io.b_in.ctrl.get.hpc.alu := (m_decoder.io.o_int.unit === INTUNIT.ALU)
+  m_out.io.b_in.ctrl.get.hpc.ld := m_decoder.io.o_lsu.ld
+  m_out.io.b_in.ctrl.get.hpc.st := m_decoder.io.o_lsu.st
+  m_out.io.b_in.ctrl.get.hpc.br := (m_decoder.io.o_int.unit === INTUNIT.BRU)
+  m_out.io.b_in.ctrl.get.hpc.mispred := false.B
+
   m_out.io.b_in.data.get.s1 := m_s1_size.io.o_val
   m_out.io.b_in.data.get.s2 := m_s2_size.io.o_val
   m_out.io.b_in.data.get.s3 := m_s3_size.io.o_val  
@@ -330,13 +335,25 @@ class IdStage(p: BackParams) extends Module {
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
-    io.o_dfp.get.wire(0) := io.b_rs(0).data
-    io.o_dfp.get.wire(1) := io.b_rs(1).data
-    io.o_dfp.get.pc := m_out.io.o_reg.ctrl.get.info.pc
-    io.o_dfp.get.instr := m_out.io.o_reg.ctrl.get.info.instr
-    io.o_dfp.get.s1 := m_out.io.o_reg.data.get.s1
-    io.o_dfp.get.s2 := m_out.io.o_reg.data.get.s2
-    io.o_dfp.get.s3 := m_out.io.o_reg.data.get.s3 
+    val w_dfp = Wire(new Bundle {
+      val pc = UInt(p.nAddrBit.W)
+      val instr = UInt(p.nInstrBit.W)
+      val wire = Vec(2, UInt(p.nDataBit.W))
+
+      val s1 = UInt(p.nDataBit.W)
+      val s2 = UInt(p.nDataBit.W)
+      val s3 = UInt(p.nDataBit.W)
+    })
+
+    w_dfp.wire(0) := io.b_rs(0).data
+    w_dfp.wire(1) := io.b_rs(1).data
+    w_dfp.pc := m_out.io.o_reg.ctrl.get.info.pc
+    w_dfp.instr := m_out.io.o_reg.ctrl.get.info.instr
+    w_dfp.s1 := m_out.io.o_reg.data.get.s1
+    w_dfp.s2 := m_out.io.o_reg.data.get.s2
+    w_dfp.s3 := m_out.io.o_reg.data.get.s3 
+
+    dontTouch(w_dfp)
 
     // ------------------------------
     //       EXECUTION TRACKER

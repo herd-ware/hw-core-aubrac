@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:39 pm                                       *
+ * Last Modified: 2023-03-02 06:07:08 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -48,20 +48,4 @@ class FrontBus(debug: Boolean, nAddrBit: Int, nInstrBit: Int) extends Bundle {
   val instr = UInt(nInstrBit.W)
   
   val etd = if (debug) Some(new EtdBus(1, nAddrBit, nInstrBit)) else None
-}
-
-// ******************************
-//          DATA FOOTPRINT
-// ******************************
-class If2DfpBus (nAddrBit: Int, nFetchInstr: Int, nInstrBit: Int) extends Bundle {
-  val pc = UInt(nAddrBit.W)
-  val instr = Vec(nFetchInstr, UInt(nInstrBit.W))
-}
-
-class FrontDfpBus (p: FrontParams) extends Bundle {
-  val pc = UInt(p.nAddrBit.W)
-  val if0 = UInt(p.nAddrBit.W)
-  val if1 = if (p.useIf1Stage) Some(UInt(p.nAddrBit.W)) else None
-  val if2 = if (p.useIf2Stage) Some(new If2DfpBus(p.nAddrBit, p.nFetchInstr, p.nInstrBit)) else None
-  val if3 = Vec(p.nFetchBufferDepth, new DfpBaseBus(p.nAddrBit, p.nInstrBit))
 }

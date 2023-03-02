@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:30 pm                                       *
+ * Last Modified: 2023-03-02 06:14:10 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -32,8 +32,6 @@ class Alu (p: GenParams, nDataBit: Int, isPipe: Boolean, useExt: Boolean) extend
 
     val o_byp = Output(UInt(nDataBit.W))    
     val o_add = Output(UInt(nDataBit.W))  
-
-    val o_dfp = if (p.debug && isPipe) Some(Output(UInt(nDataBit.W))) else None  
   })  
 
   val w_lock = Wire(Bool())
@@ -325,7 +323,13 @@ class Alu (p: GenParams, nDataBit: Int, isPipe: Boolean, useExt: Boolean) extend
     //         DATA FOOTPRINT
     // ------------------------------
     if (isPipe) {
-      io.o_dfp.get := m_ack.io.o_reg.data.get    
+      val w_dfp = Wire(new Bundle {
+        val res = UInt(nDataBit.W)
+      })
+
+      w_dfp.res := m_ack.io.o_reg.data.get   
+
+      dontTouch(w_dfp) 
     }
   }
 }

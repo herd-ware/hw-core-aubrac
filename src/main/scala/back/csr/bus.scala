@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 12:19:54 pm                                       *
+ * Last Modified: 2023-03-02 06:24:03 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -22,7 +22,7 @@ import scala.math._
 import herd.common.isa.riscv.{CsrBus => RiscvCsrBus}
 import herd.common.isa.priv.{CsrBus => PrivCsrBus}
 import herd.common.isa.champ.{CsrBus => ChampCsrBus}
-import herd.common.isa.count.{CsrBus => CountCsrBus}
+import herd.common.isa.hpc.{CsrBus => HpcCsrBus}
 import herd.common.isa.custom.{CsrBus => CustomCsrBus}
 import herd.core.aubrac.common._
 
@@ -32,7 +32,7 @@ import herd.core.aubrac.common._
 // ******************************
 class CsrBus(nDataBit: Int, useChamp: Boolean) extends Bundle {
   val riscv = new RiscvCsrBus()
-  val cnt = new CountCsrBus()
+  val hpc = new HpcCsrBus()
   val priv = if (!useChamp) Some(new PrivCsrBus(nDataBit)) else None
   val champ = if (useChamp) Some(new ChampCsrBus(nDataBit)) else None
 }

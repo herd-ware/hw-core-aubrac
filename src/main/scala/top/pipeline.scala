@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 01:36:36 pm                                       *
+ * Last Modified: 2023-03-02 06:48:47 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -19,6 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.field._
+import herd.common.isa.hpc.{HpcMemoryBus}
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.nlp._
@@ -42,10 +43,9 @@ class Pipeline (p: PipelineParams) extends Module {
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
-    val b_csr_mem = new CsrMemIO()
+    val i_hpc_mem = Input(new HpcMemoryBus())
 
     val o_dbg = if (p.debug) Some(Output(new PipelineDbgBus(p))) else None
-    val o_dfp = if (p.debug) Some(Output(new PipelineDfpBus(p))) else None
     val o_etd = if (p.debug) Some(Output(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit))) else None
   })
 
@@ -94,7 +94,7 @@ class Pipeline (p: PipelineParams) extends Module {
   if (p.useCbo) m_back.io.b_cbo.get <> io.b_cbo.get
   if (p.useChamp) m_back.io.b_hfu.get <> io.b_hfu.get
 
-  m_back.io.b_csr_mem <> io.b_csr_mem
+  m_back.io.i_hpc_mem := io.i_hpc_mem
   m_back.io.b_clint <> io.b_clint
 
   // ******************************
@@ -118,24 +118,6 @@ class Pipeline (p: PipelineParams) extends Module {
     io.o_dbg.get.last := m_back.io.o_dbg.get.last
     io.o_dbg.get.x := m_back.io.o_dbg.get.x
     io.o_dbg.get.csr := m_back.io.o_dbg.get.csr
-
-    // ------------------------------
-    //         DATA FOOTPRINT
-    // ------------------------------
-    io.o_dfp.get.pc := m_front.io.o_dfp.get.pc
-    io.o_dfp.get.if0 := m_front.io.o_dfp.get.if0
-    if (p.useIf1Stage) io.o_dfp.get.if1.get := m_front.io.o_dfp.get.if1.get
-    if (p.useIf2Stage) io.o_dfp.get.if2.get := m_front.io.o_dfp.get.if2.get
-    io.o_dfp.get.if3 := m_front.io.o_dfp.get.if3
-
-    io.o_dfp.get.id := m_back.io.o_dfp.get.id
-    io.o_dfp.get.ex := m_back.io.o_dfp.get.ex
-    if (p.useMemStage) io.o_dfp.get.mem.get := m_back.io.o_dfp.get.mem.get
-    io.o_dfp.get.wb := m_back.io.o_dfp.get.wb
-    io.o_dfp.get.gpr := m_back.io.o_dfp.get.gpr
-
-    if (p.nExStage > 1) io.o_dfp.get.alu.get := m_back.io.o_dfp.get.alu.get   
-    if (p.useExtM) io.o_dfp.get.muldiv.get := m_back.io.o_dfp.get.muldiv.get
 
     // ------------------------------
     //       EXECUTION TRACKER

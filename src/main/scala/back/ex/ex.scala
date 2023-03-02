@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 12:21:25 pm                                       *
+ * Last Modified: 2023-03-02 07:22:35 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -53,14 +53,9 @@ class ExStage (p: BackParams) extends Module {
     val o_byp = Output(Vec(p.nExStage, new BypassBus(p.nHart, p.nDataBit)))
     val o_br_new = Output(new BranchBus(p.nAddrBit))
     val o_br_info = Output(new BranchInfoBus(p.nAddrBit))
-    val o_br  = Output(UInt(p.nDataBit.W))
     val o_mispred = Output(UInt(p.nDataBit.W))
 
     val b_out = new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit))
-
-    val o_dfp_ex = if (p.debug && p.useMemStage) Some(Output(new ExDfpBus(p))) else None
-    val o_dfp_alu = if (p.debug && (p.nExStage > 1)) Some(Output(UInt(p.nDataBit.W))) else None
-    val o_dfp_muldiv = if (p.debug && p.useExtM) Some(Output(new MulDivDfpBus(p.nDataBit, (p.nExStage > 2)))) else None
   })
 
   // ******************************
@@ -433,7 +428,6 @@ class ExStage (p: BackParams) extends Module {
   //          UNIT: BRU
   // ------------------------------
   // CSR informations
-  io.o_br := 0.U
   io.o_mispred := 0.U
 
   m_bru.io.b_port.ack.ready := w_ex1_flush
@@ -446,23 +440,18 @@ class ExStage (p: BackParams) extends Module {
 
       w_br_new.valid := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid & ~w_ex1_flush & ~w_ex1_lock
       w_pipe_flush := m_bru.io.b_port.ack.valid & m_bru.io.o_flush & ~w_ex1_flush & ~w_ex1_lock
-
-      io.o_br := m_bru.io.b_port.ack.valid & ~w_ex1_flush & ~w_ex1_wait
-      io.o_mispred := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid & ~w_ex1_flush & ~w_ex1_wait
     } else {
       m_bru.io.b_port.ack.ready := w_ex1.valid & ~w_ex1_lock & ~w_ex2_wait
       
       w_br_new.valid := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid & ~w_ex1_flush & ~w_ex2_lock
       w_pipe_flush := m_bru.io.b_port.ack.valid & m_bru.io.o_flush & ~w_ex1_flush & ~w_ex2_lock
-
-      io.o_br := m_bru.io.b_port.ack.valid & ~w_ex1_flush & ~w_ex1_wait & ~w_ex2_wait
-      io.o_mispred := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid & ~w_ex1_flush & ~w_ex1_wait & ~w_ex2_wait
-    
     }
 
     w_ex1_unit_wait := ~m_bru.io.b_port.ack.valid
     w_ex1.data.get.res := m_bru.io.b_port.ack.data.get
     w_br_new.addr := m_bru.io.o_br_new.addr
+
+    w_ex1.ctrl.get.hpc.mispred := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid
   }
 
   // ------------------------------
@@ -732,33 +721,41 @@ class ExStage (p: BackParams) extends Module {
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
-    if (p.nExStage > 1) io.o_dfp_alu.get := m_alu.io.o_dfp.get
-    if (p.useExtM) io.o_dfp_muldiv.get := m_muldiv.get.io.o_dfp.get
+    val w_dfp = Wire(Vec(p.nExStage, new Bundle {
+      val pc = UInt(p.nAddrBit.W)
+      val instr = UInt(p.nInstrBit.W)
+
+      val s1 = UInt(p.nDataBit.W)
+      val s3 = UInt(p.nDataBit.W)
+      val res = UInt(p.nDataBit.W)
+    }))
 
     if (p.useMemStage) {    
-      io.o_dfp_ex.get.pc(p.nExStage - 1) := m_out.io.o_reg.ctrl.get.info.pc
-      io.o_dfp_ex.get.instr(p.nExStage - 1) := m_out.io.o_reg.ctrl.get.info.instr
-      io.o_dfp_ex.get.s1(p.nExStage - 1) := m_out.io.o_reg.data.get.s1
-      io.o_dfp_ex.get.s3(p.nExStage - 1) := m_out.io.o_reg.data.get.s3
-      io.o_dfp_ex.get.res(p.nExStage - 1) := m_out.io.o_reg.data.get.res
+      w_dfp(p.nExStage - 1).pc := m_out.io.o_reg.ctrl.get.info.pc
+      w_dfp(p.nExStage - 1).instr := m_out.io.o_reg.ctrl.get.info.instr
+      w_dfp(p.nExStage - 1).s1 := m_out.io.o_reg.data.get.s1
+      w_dfp(p.nExStage - 1).s3 := m_out.io.o_reg.data.get.s3
+      w_dfp(p.nExStage - 1).res := m_out.io.o_reg.data.get.res
             
 
       if (p.nExStage > 1) {    
-        io.o_dfp_ex.get.pc(0) := m_ex0.io.o_reg.ctrl.get.info.pc
-        io.o_dfp_ex.get.instr(0) := m_ex0.io.o_reg.ctrl.get.info.instr
-        io.o_dfp_ex.get.s1(0) := m_ex0.io.o_reg.data.get.s1
-        io.o_dfp_ex.get.s3(0) := m_ex0.io.o_reg.data.get.s3
-        io.o_dfp_ex.get.res(0) := m_ex0.io.o_reg.data.get.res             
+        w_dfp(0).pc := m_ex0.io.o_reg.ctrl.get.info.pc
+        w_dfp(0).instr := m_ex0.io.o_reg.ctrl.get.info.instr
+        w_dfp(0).s1 := m_ex0.io.o_reg.data.get.s1
+        w_dfp(0).s3 := m_ex0.io.o_reg.data.get.s3
+        w_dfp(0).res := m_ex0.io.o_reg.data.get.res             
       }
 
       if (p.nExStage > 2) {    
-        io.o_dfp_ex.get.pc(1) := m_ex1.io.o_reg.ctrl.get.info.pc
-        io.o_dfp_ex.get.instr(1) := m_ex1.io.o_reg.ctrl.get.info.instr
-        io.o_dfp_ex.get.s1(1) := m_ex1.io.o_reg.data.get.s1
-        io.o_dfp_ex.get.s3(1) := m_ex1.io.o_reg.data.get.s3
-        io.o_dfp_ex.get.res(1) := m_ex1.io.o_reg.data.get.res        
+        w_dfp(1).pc := m_ex1.io.o_reg.ctrl.get.info.pc
+        w_dfp(1).instr := m_ex1.io.o_reg.ctrl.get.info.instr
+        w_dfp(1).s1 := m_ex1.io.o_reg.data.get.s1
+        w_dfp(1).s3 := m_ex1.io.o_reg.data.get.s3
+        w_dfp(1).res := m_ex1.io.o_reg.data.get.res        
       }
     }
+    
+    dontTouch(w_dfp)
 
     // ------------------------------
     //       EXECUTION TRACKER

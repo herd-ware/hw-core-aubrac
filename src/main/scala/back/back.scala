@@ -1,10 +1,10 @@
 /*
- * File: back.scala
+ * File: back.scala                                                            *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:34:05 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 06:51:12 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,6 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.field._
+import herd.common.isa.hpc.{HpcMemoryBus}
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.common._
@@ -48,10 +49,9 @@ class Back (p: BackParams) extends Module {
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
-    val b_csr_mem = new CsrMemIO()
+    val i_hpc_mem = Input(new HpcMemoryBus())
 
     val o_dbg = if (p.debug) Some(Output(new BackDbgBus(p))) else None
-    val o_dfp = if (p.debug) Some(Output(new BackDfpBus(p))) else None
     val o_etd = if (p.debug) Some(Output(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit))) else None
   })
 
@@ -186,11 +186,9 @@ class Back (p: BackParams) extends Module {
   m_csr.io.b_read(0) <> m_mem.io.b_csr
   m_csr.io.b_write(0) <> m_wb.io.b_csr
 
-  m_csr.io.i_stat(0) := 0.U.asTypeOf(m_csr.io.i_stat(0))
-  m_csr.io.i_stat(0).br := m_ex.io.o_br
-  m_csr.io.i_stat(0).mispred := m_ex.io.o_mispred
-  m_csr.io.i_stat(0).instret := m_wb.io.o_instret
-  m_csr.io.b_mem(0) <> io.b_csr_mem
+  m_csr.io.i_hpc_pipe(0) := m_wb.io.o_hpc
+  m_csr.io.i_hpc_mem(0) := io.i_hpc_mem
+  
   m_csr.io.b_clint(0) <> io.b_clint
   m_csr.io.i_trap(0) := m_fsm.io.o_trap
 
@@ -256,26 +254,6 @@ class Back (p: BackParams) extends Module {
     io.o_dbg.get.last := r_dbg_last
     io.o_dbg.get.x := m_gpr.io.o_dbg.get(0)
     io.o_dbg.get.csr := m_csr.io.o_dbg.get(0)
-
-    // ------------------------------
-    //         DATA FOOTPRINT
-    // ------------------------------
-    io.o_dfp.get.id := m_id.io.o_dfp.get
-    if (p.useMemStage) {
-      io.o_dfp.get.ex := m_ex.io.o_dfp_ex.get       
-      io.o_dfp.get.mem.get := m_mem.io.o_dfp.get
-    } else {
-      io.o_dfp.get.ex.pc(0) := m_mem.io.o_dfp.get.pc
-      io.o_dfp.get.ex.instr(0) := m_mem.io.o_dfp.get.instr
-      io.o_dfp.get.ex.s1(0) := m_mem.io.o_dfp.get.s1
-      io.o_dfp.get.ex.s3(0) := m_mem.io.o_dfp.get.s3
-      io.o_dfp.get.ex.res(0) := m_mem.io.o_dfp.get.res
-    }
-    io.o_dfp.get.wb := m_wb.io.o_dfp.get
-    io.o_dfp.get.gpr := m_gpr.io.o_dfp.get
-
-    if (p.nExStage > 1) io.o_dfp.get.alu.get := m_ex.io.o_dfp_alu.get   
-    if (p.useExtM) io.o_dfp.get.muldiv.get := m_ex.io.o_dfp_muldiv.get
 
     // ------------------------------
     //       EXECUTION TRACKER

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 11:03:47 pm                                       *
+ * Last Modified: 2023-03-02 06:06:48 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -48,9 +48,6 @@ class Front (p: FrontParams) extends Module {
 
     // Output data buses
     val b_out = Vec(p.nBackPort, new GenRVIO(p, new FrontBus(p.debug, p.nAddrBit, p.nInstrBit), UInt(0.W)))
-
-    // Debug bus
-    val o_dfp = if (p.debug) Some(Output(new FrontDfpBus(p))) else None  
   })
 
   val w_flush = Wire(Bool())
@@ -187,15 +184,6 @@ class Front (p: FrontParams) extends Module {
     // ------------------------------
     //            SIGNALS
     // ------------------------------
-
-    // ------------------------------
-    //         DATA FOOTPRINT
-    // ------------------------------
-    io.o_dfp.get.pc := m_pc.io.o_dfp.get
-    io.o_dfp.get.if0 := m_if0.io.o_dfp.get
-    if (p.useIf1Stage) io.o_dfp.get.if1.get := m_if1.io.o_dfp.get
-    if (p.useIf2Stage) io.o_dfp.get.if2.get := m_if2.io.o_dfp.get
-    io.o_dfp.get.if3 := m_if3.io.o_dfp.get
 
     // ------------------------------
     //       EXECUTION TRACKER
