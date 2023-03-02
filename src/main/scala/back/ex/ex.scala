@@ -1,10 +1,10 @@
 /*
- * File: ex.scala
+ * File: ex.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:34:00 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 12:21:25 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
 import herd.common.isa.champ.{EXC => CHAMPEXC}
@@ -34,7 +34,7 @@ class ExStage (p: BackParams) extends Module {
   require ((p.nExStage >= 1) && (p.nExStage <= 3), "Only 1 to 3 EX stages are possible.")
 
   val io = IO(new Bundle {    
-    val b_back = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
     
     val i_flush = Input(Bool())
     val o_flush = Output(Bool())
@@ -47,7 +47,7 @@ class ExStage (p: BackParams) extends Module {
     val i_br_next = Input(new BranchBus(p.nAddrBit))
 
     val b_dmem = if (!p.useMemStage || (p.nExStage > 1)) Some(new Mb4sReqIO(p.pL0DBus)) else None
-    val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
+    val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useField, p.nField, p.nAddrBit)) else None
     val b_hfu = if (p.useChamp) Some(new GenRVIO(p, new HfuReqCtrlBus(p.debug, p.nAddrBit), new HfuReqDataBus(p.nDataBit))) else None
     
     val o_byp = Output(Vec(p.nExStage, new BypassBus(p.nHart, p.nDataBit)))
@@ -69,7 +69,7 @@ class ExStage (p: BackParams) extends Module {
   val w_back_valid = Wire(Bool())
   val w_back_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_back_valid := io.b_back.get.valid & ~io.b_back.get.flush
     w_back_flush := io.b_back.get.flush | io.i_flush
   } else {
@@ -83,7 +83,7 @@ class ExStage (p: BackParams) extends Module {
   // ------------------------------
   //              EX0
   // ------------------------------
-  val w_ex0 = Wire(new GenVBus(p, new IntUnitCtrlBus(p.nHart, p.useDome, p.nDome, p.nAddrBit), new IntUnitDataBus(p.nDataBit)))
+  val w_ex0 = Wire(new GenVBus(p, new IntUnitCtrlBus(p.nHart, p.useField, p.nField, p.nAddrBit), new IntUnitDataBus(p.nDataBit)))
   
   val w_ex0_flush = Wire(Bool())
   val w_ex0_wait = Wire(Bool())
@@ -136,7 +136,7 @@ class ExStage (p: BackParams) extends Module {
 
   w_ex0.valid := io.b_in.valid & w_back_valid & ~w_ex0_flush
   w_ex0.ctrl.get.hart := io.b_in.ctrl.get.info.hart
-  if (p.useDome) w_ex0.ctrl.get.dome.get := io.b_back.get.dome
+  if (p.useField) w_ex0.ctrl.get.field.get := io.b_back.get.field
   w_ex0.ctrl.get.uop := io.b_in.ctrl.get.int.uop
   w_ex0.ctrl.get.pc := io.b_in.ctrl.get.info.pc
   w_ex0.ctrl.get.ssign := io.b_in.ctrl.get.int.ssign
@@ -295,7 +295,7 @@ class ExStage (p: BackParams) extends Module {
 
       m_dmem.io.b_out.ready := io.b_dmem.get.ready(0)
       io.b_dmem.get.valid := m_dmem.io.b_out.valid
-      if (p.useDome) io.b_dmem.get.dome.get := io.b_back.get.dome
+      if (p.useField) io.b_dmem.get.field.get := io.b_back.get.field
       io.b_dmem.get.ctrl := m_dmem.io.b_out.ctrl.get
       
     // No MemStage
@@ -303,7 +303,7 @@ class ExStage (p: BackParams) extends Module {
       w_ex0_mem_wait := ~io.b_dmem.get.ready(0) & io.b_in.ctrl.get.lsu.use
 
       io.b_dmem.get.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.use & ~w_ex0_trap.valid & ~w_ex0_lock & ~w_ex0_flush & ~w_pipe_flush
-      if (p.useDome) io.b_dmem.get.dome.get := io.b_back.get.dome
+      if (p.useField) io.b_dmem.get.field.get := io.b_back.get.field
       io.b_dmem.get.ctrl.hart := 0.U
       io.b_dmem.get.ctrl.op := io.b_in.ctrl.get.lsu.uop
       io.b_dmem.get.ctrl.addr := m_alu.io.o_add
@@ -682,9 +682,9 @@ class ExStage (p: BackParams) extends Module {
   io.o_stop := io.b_in.valid & ~w_ex0_lock & ~w_ex0_flush & w_ex0_trap.valid
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     val w_free_ex0 = Wire(Bool())
     val w_free_ex1 = Wire(Bool())
     val w_free_out = Wire(Bool())

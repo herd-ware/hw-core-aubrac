@@ -20,14 +20,14 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.mem.mb4s._
-import herd.common.dome._
+import herd.common.field._
 import herd.core.aubrac.common._
 
 
 class If2Stage(p: FrontParams) extends Module {
   val io = IO(new Bundle {
     // Resource management bus
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     // Stage management buses
     val i_flush = Input(Bool())
@@ -56,7 +56,7 @@ class If2Stage(p: FrontParams) extends Module {
   val w_hart_valid = Wire(Bool())
   val w_hart_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_hart_valid := io.b_hart.get.valid & ~io.b_hart.get.flush
     w_hart_flush := io.b_hart.get.flush
   } else {
@@ -126,9 +126,9 @@ class If2Stage(p: FrontParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************  
-  if (p.useDome) {
+  if (p.useField) {
     if (p.useIf2Stage) io.b_hart.get.free := ~m_out.get.io.b_out.valid else io.b_hart.get.free := true.B
   }
 

@@ -1,10 +1,10 @@
 /*
- * File: wb.scala
+ * File: wb.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:34:02 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 12:22:17 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.mem.mb4s._
 import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
@@ -31,7 +31,7 @@ import herd.core.aubrac.hfu.{HfuAckIO}
 
 class WbStage (p: BackParams) extends Module {
   val io = IO(new Bundle {
-    val b_back = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
 
     val i_flush = Input(Bool())
 
@@ -74,7 +74,7 @@ class WbStage (p: BackParams) extends Module {
   val w_back_valid = Wire(Bool())
   val w_back_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_back_valid := io.b_back.get.valid & ~io.b_back.get.flush
     w_back_flush := io.b_back.get.flush | io.i_flush
   } else {
@@ -145,7 +145,7 @@ class WbStage (p: BackParams) extends Module {
   } else {
     io.b_dmem.write.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.st & ~w_sload_av
   }
-  if (p.useDome) io.b_dmem.write.dome.get := io.b_back.get.dome
+  if (p.useField) io.b_dmem.write.field.get := io.b_back.get.field
   io.b_dmem.write.data := io.b_in.data.get.s3
 
   if (p.useExtA) {
@@ -307,14 +307,14 @@ class WbStage (p: BackParams) extends Module {
   io.o_stop := io.b_in.valid & ~io.i_flush & ~w_lock & w_exc_unit
 
   // ******************************
-  //           OUTPUTS
+  //            OUTPUTS
   // ******************************
   io.b_in.ready := ~w_lock & (~w_sload_av | w_is_sload)
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_back.get.free := ~m_sload.io.o_val.valid
   } 
 

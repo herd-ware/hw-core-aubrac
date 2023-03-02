@@ -35,7 +35,7 @@ object PipelineConfigBase extends PipelineConfig (
   //            CHAMP
   // ------------------------------
   useChamp = true,
-  nDome = 1,
+  nField = 1,
   nPart = 1,
   nChampTrapLvl = 1,
 
@@ -94,7 +94,7 @@ object AubracConfigBase extends AubracConfig (
   nChampTrapLvl = 2,
   
   nPart = 2,
-  nDomeFlushCycle = 10,
+  nFieldFlushCycle = 10,
 
   // ------------------------------
   //           FRONT END

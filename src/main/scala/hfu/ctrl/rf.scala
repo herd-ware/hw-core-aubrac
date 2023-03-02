@@ -1,10 +1,10 @@
 /*
- * File: rf.scala
+ * File: rf.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:32:48 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 01:26:43 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -22,13 +22,13 @@ import herd.common.isa.champ._
 
 
 class RegFile (p: HfuParams) extends Module {
-  require((p.nChampReg <= CST.MAXCFG), "A maximum of " + CST.MAXCFG + " dome configurations is possible.")
+  require((p.nChampReg <= CST.MAXSTRUCT), "A maximum of " + CST.MAXSTRUCT + " field structures is possible.")
   
   val io = IO(new Bundle {
     val b_read = Vec(2, new RegFileReadIO(p))
     val b_write = new RegFileWriteIO(p)
 
-    val o_state = Output(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
+    val o_state = Output(new RegFileStateBus(p.nChampReg, p.pFieldStruct))
     val i_atl = Input(Vec(2, Bool()))
 
     val o_dbg = if (p.debug) Some(Output(Vec(p.nChampReg, Vec(6, UInt(p.nDataBit.W))))) else None
@@ -37,7 +37,7 @@ class RegFile (p: HfuParams) extends Module {
   // ******************************
   //             INIT
   // ******************************
-  val init_reg = Wire(new RegFileBus(p.nChampReg, p.pDomeCfg))
+  val init_reg = Wire(new RegFileBus(p.nChampReg, p.pFieldStruct))
 
   init_reg.hf(0).status.valid     := true.B
   init_reg.hf(0).status.lock      := true.B
@@ -61,7 +61,7 @@ class RegFile (p: HfuParams) extends Module {
   init_reg.hf(0).cap.secmie       := true.B
   init_reg.hf(0).cap.seccst       := true.B
   for (tl <- 0 until CST.MAXTL) {
-    init_reg.hf(0).cap.featl(tl)  := (tl < p.pDomeCfg.nTrapLvl).B    
+    init_reg.hf(0).cap.featl(tl)  := (tl < p.pFieldStruct.nTrapLvl).B    
   }
   init_reg.hf(0).cap.feafr        := p.useChampExtFr.B
   init_reg.hf(0).cap.feacbo       := true.B
@@ -166,7 +166,7 @@ class RegFile (p: HfuParams) extends Module {
 
 class Bypass(p: HfuParams) extends Module {
   val io = IO(new Bundle {
-    val i_hfs = Input(Vec(2, new DomeCfgBus(p.pDomeCfg)))
+    val i_hfs = Input(Vec(2, new FieldStructBus(p.pFieldStruct)))
     val b_hfs = Vec(2, new RegFileReadIO(p))
 
     val i_chf = Input(UInt(log2Ceil(p.nChampReg).W))

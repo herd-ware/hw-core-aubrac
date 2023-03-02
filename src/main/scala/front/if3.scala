@@ -1,10 +1,10 @@
 /*
- * File: if3.scala
+ * File: if3.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:30:57 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 01:17:48 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.tools._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.riscv.{INSTR => RISCV}
 import herd.core.aubrac.common._
 
@@ -28,7 +28,7 @@ import herd.core.aubrac.common._
 class If3Stage(p: FrontParams) extends Module {
   val io = IO(new Bundle {
     // Resource management bus
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     // Stage management buses
     val i_flush = Input(Bool())
@@ -56,7 +56,7 @@ class If3Stage(p: FrontParams) extends Module {
   val w_hart_valid = Wire(Bool())
   val w_hart_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_hart_valid := io.b_hart.get.valid & ~io.b_hart.get.flush
     w_hart_flush := io.b_hart.get.flush | io.i_flush
   } else {
@@ -171,9 +171,9 @@ class If3Stage(p: FrontParams) extends Module {
     }
 
     // ------------------------------
-    //             DOME 
+    //             FIELD 
     // ------------------------------    
-    if (p.useDome) {
+    if (p.useField) {
       io.b_hart.get.free := ~m_buf.io.b_out(0).valid
     }
 
@@ -220,9 +220,9 @@ class If3Stage(p: FrontParams) extends Module {
     io.b_out(0) <> m_buf.io.b_out
 
     // ------------------------------
-    //             DOME 
+    //             FIELD 
     // ------------------------------    
-    if (p.useDome) {
+    if (p.useField) {
       io.b_hart.get.free := ~m_buf.io.b_out.valid
     }
 

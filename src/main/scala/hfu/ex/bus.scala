@@ -29,13 +29,13 @@ class AluReqCtrlBus extends Bundle {
 }
 
 class AluReqDataBus(p: HfuParams) extends Bundle {
-  val s1 = Input(new DomeCfgBus(p.pDomeCfg))
+  val s1 = Input(new FieldStructBus(p.pFieldStruct))
   val s2 = Input(UInt(p.nDataBit.W))
   val s3 = Input(UInt(p.nDataBit.W))
 }
 
 class AluAckDataBus(p: HfuParams) extends Bundle {
-  val hfres = new DomeCfgBus(p.pDomeCfg)
+  val hfres = new FieldStructBus(p.pFieldStruct)
   val res = UInt(p.nDataBit.W)
 }
 
@@ -48,11 +48,11 @@ class CheckReqCtrlBus extends Bundle {
 }
 
 class CheckReqDataBus(p: HfuParams) extends Bundle {
-  val base = new DomeCfgBus(p.pDomeCfg)
-  val hfs = new DomeCfgBus(p.pDomeCfg)
+  val base = new FieldStructBus(p.pFieldStruct)
+  val hfs = new FieldStructBus(p.pFieldStruct)
 }
 
 class CheckAckDataBus(p: HfuParams) extends Bundle {
-  val hfres = new DomeCfgBus(p.pDomeCfg)
+  val hfres = new FieldStructBus(p.pFieldStruct)
   val res = UInt(p.nDataBit.W)
 }

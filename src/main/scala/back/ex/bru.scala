@@ -48,10 +48,10 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
     val o_br_info = Output(new BranchInfoBus(nAddrBit))
     val o_br_new = Output(new BranchBus(nAddrBit))
     val o_flush = Output(Bool())
-    val b_cbo = if (useCbo) Some(new CboIO(nHart, p.useDome, p.nDome, nAddrBit)) else None
+    val b_cbo = if (useCbo) Some(new CboIO(nHart, p.useField, p.nField, nAddrBit)) else None
   })
 
-  val init_cbo = Wire(new CboBus(nHart, p.useDome, p.nDome, nAddrBit))
+  val init_cbo = Wire(new CboBus(nHart, p.useField, p.nField, nAddrBit))
 
   if (useExtZicbo) {
     init_cbo := DontCare
@@ -91,7 +91,7 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
               r_cbo.valid := true.B
               r_cbo.ready := false.B
               r_cbo.hart := io.b_port.req.ctrl.get.hart
-              if (p.useDome) r_cbo.dome.get := io.b_port.req.ctrl.get.dome.get
+              if (p.useField) r_cbo.field.get := io.b_port.req.ctrl.get.field.get
               r_cbo.op := CBOOP.FLUSH
               r_cbo.sort := CBOSORT.E
               r_cbo.block := CBOBLOCK.FULL
@@ -107,7 +107,7 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
               r_cbo.valid := true.B
               r_cbo.ready := false.B
               r_cbo.hart := io.b_port.req.ctrl.get.hart
-              if (p.useDome) r_cbo.dome.get := io.b_port.req.ctrl.get.dome.get
+              if (p.useField) r_cbo.field.get := io.b_port.req.ctrl.get.field.get
               r_cbo.sort := CBOSORT.A
               r_cbo.block := CBOBLOCK.LINE
               r_cbo.addr := io.b_port.req.data.get.s1
@@ -127,7 +127,7 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
               r_cbo.valid := true.B
               r_cbo.ready := false.B
               r_cbo.hart := io.b_port.req.ctrl.get.hart
-              if (p.useDome) r_cbo.dome.get := io.b_port.req.ctrl.get.dome.get
+              if (p.useField) r_cbo.field.get := io.b_port.req.ctrl.get.field.get
               r_cbo.op := CBOOP.PFTCH
               r_cbo.addr := io.b_port.req.data.get.s1
 
@@ -259,7 +259,7 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
   if (useCbo) {
     io.b_cbo.get.valid := r_cbo.valid
     io.b_cbo.get.hart := r_cbo.hart
-    if (p.useDome) io.b_cbo.get.dome.get := r_cbo.dome.get 
+    if (p.useField) io.b_cbo.get.field.get := r_cbo.field.get 
     io.b_cbo.get.op := r_cbo.op
     io.b_cbo.get.sort := r_cbo.sort
     io.b_cbo.get.block := r_cbo.block  

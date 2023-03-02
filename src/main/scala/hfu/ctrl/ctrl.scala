@@ -44,7 +44,7 @@ class CtrlStage(p: HfuParams) extends Module {
     val b_in = Flipped(new GenRVIO(p, new CtrlStageBus(p), new ResultBus(p)))
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
-    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
+    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pFieldStruct))
     val o_byp = Output(new BypassBus(p))
 
     val b_rf = Flipped(new RegFileWriteIO(p))
@@ -74,7 +74,7 @@ class CtrlStage(p: HfuParams) extends Module {
   // ******************************
   val w_full = Wire(Bool())
   val w_index = Wire(UInt(7.W))
-  val w_hfres = Wire(new DomeCfgBus(p.pDomeCfg))
+  val w_hfres = Wire(new FieldStructBus(p.pFieldStruct))
   val w_hfres_lock = Wire(Bool())
   val w_res = Wire(UInt(p.nDataBit.W))
 
@@ -169,7 +169,7 @@ class CtrlStage(p: HfuParams) extends Module {
   //             REQ
   // ------------------------------
   io.b_dmem.req.valid := ~r_mem_req & w_is_mem & ~w_wait_ack & ~w_wait_rmr & ~w_trap.valid
-  io.b_dmem.req.dome.get := 0.U  
+  io.b_dmem.req.field.get := 0.U  
   io.b_dmem.req.ctrl.hart := 0.U
   io.b_dmem.req.ctrl.op := Mux(io.b_in.ctrl.get.lsu.st, MEMOP.W, MEMOP.R)
   io.b_dmem.req.ctrl.size := SIZE.B4.U
@@ -181,7 +181,7 @@ class CtrlStage(p: HfuParams) extends Module {
   io.b_dmem.read.ready(0) := io.b_in.ctrl.get.lsu.ld & (r_fsm === s1MEM)
 
   io.b_dmem.write.valid := io.b_in.ctrl.get.lsu.st & (r_fsm === s1MEM)
-  io.b_dmem.write.dome.get := 0.U
+  io.b_dmem.write.field.get := 0.U
   io.b_dmem.write.data := DontCare
 
   // ------------------------------

@@ -24,8 +24,8 @@ object FrontConfigBase extends FrontConfig (
   pcBoot = "40",
   nHart = 1,
   
-  useDome = false,
-  nDome = 1,
+  useField = false,
+  nField = 1,
   nPart = 1,
 
   nAddrBit = 32,

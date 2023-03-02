@@ -33,5 +33,5 @@ object HfuConfigBase extends HfuConfig (
   useChampExtCst = true,
   nChampTrapLvl = 2,
   nPart = 4,
-  nDomeFlushCycle = 10
+  nFieldFlushCycle = 10
 )

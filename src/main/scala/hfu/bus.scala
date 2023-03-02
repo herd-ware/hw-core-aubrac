@@ -87,7 +87,7 @@ class RegFileReadIO(p: HfuParams) extends Bundle {
   val full = Input(Bool())
   val index = Input(UInt(7.W))
   val ready = Output(Bool())
-  val data = Output(new DomeCfgBus(p.pDomeCfg))
+  val data = Output(new FieldStructBus(p.pFieldStruct))
 }
 
 class RegFileWriteIO (p: HfuParams) extends Bundle {
@@ -97,14 +97,14 @@ class RegFileWriteIO (p: HfuParams) extends Bundle {
   val addr = Input(UInt(log2Ceil(p.nChampReg).W))
   val full = Input(Bool())
   val index = Input(UInt(7.W))
-  val data = Input(new DomeCfgBus(p.pDomeCfg))
+  val data = Input(new FieldStructBus(p.pFieldStruct))
 }
 
 class BypassBus (p: HfuParams) extends Bundle {
   val valid = Bool()
   val addr = UInt(log2Ceil(p.nChampReg).W)
   val ready = Bool()
-  val data = new DomeCfgBus(p.pDomeCfg)
+  val data = new FieldStructBus(p.pFieldStruct)
   val full = Bool()
   val index = UInt(7.W)
 }
@@ -169,7 +169,7 @@ class CtrlStageBus (p: HfuParams) extends Bundle {
 //           DATA BUS
 // ******************************
 class DataBus(p: HfuParams) extends Bundle {
-  val s1 = new DomeCfgBus(p.pDomeCfg)
+  val s1 = new FieldStructBus(p.pFieldStruct)
   val s2 = UInt(p.nDataBit.W)
   val s3 = UInt(p.nDataBit.W)
 }
@@ -177,7 +177,7 @@ class DataBus(p: HfuParams) extends Bundle {
 class ResultBus(p: HfuParams) extends Bundle {
   val s2 = UInt(p.nDataBit.W)
   val s3 = UInt(p.nDataBit.W)
-  val hfres = new DomeCfgBus(p.pDomeCfg)
+  val hfres = new FieldStructBus(p.pFieldStruct)
   val res = UInt(p.nDataBit.W)
 }
 
@@ -188,7 +188,7 @@ class RmrReqIO (p: HfuParams) extends Bundle {
   val ready = Input(Bool())
   val valid = Output(Bool())
   val op = Output(UInt(RMRUOP.NBIT.W))
-  val hfres = Output(new DomeCfgBus(p.pDomeCfg))
+  val hfres = Output(new FieldStructBus(p.pFieldStruct))
   val target = Output(UInt(p.nAddrBit.W))
 }
 
@@ -201,7 +201,7 @@ class RmrStateBus (p: HfuParams) extends Bundle {
   val target = UInt(p.nAddrBit.W)
 }
 
-class RmrDomeBus (p: HfuParams) extends Bundle {
+class RmrFieldBus (p: HfuParams) extends Bundle {
   val id = UInt(p.nDataBit.W)
   val mie = Bool()
   val cst = Bool()

@@ -1,10 +1,10 @@
 /*
- * File: champ.scala
+ * File: champ.scala                                                           *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:33:53 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 12:20:29 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,7 +20,7 @@ import chisel3.util._
 import scala.math._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.count.{CsrBus => StatBus}
 import herd.core.aubrac.common._
 import herd.core.aubrac.hfu.{HfuReqCtrlBus, HfuReqDataBus, HfuCsrIO}
@@ -38,8 +38,8 @@ class Champ(p: CsrParams) extends Module {
   require(p.useChamp, "CHAMPS ISA support must be enable for this version of CSR.")
 
   val io = IO(new Bundle {
-    val b_dome = Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit))
-    val b_hart = Vec(p.nHart, new RsrcIO(p.nHart, p.nDome, p.nHart))
+    val b_field = Vec(p.nField, new FieldIO(p.nAddrBit, p.nDataBit))
+    val b_hart = Vec(p.nHart, new RsrcIO(p.nHart, p.nField, p.nHart))
 
     val b_read = Vec(p.nHart, new CsrReadIO(p.nDataBit))
     val b_write = Vec(p.nHart, new CsrWriteIO(p.nDataBit))
@@ -158,7 +158,7 @@ class Champ(p: CsrParams) extends Module {
     when (io.b_write(h).valid) {   
       switch (io.b_write(h).addr) {
         is (ENVCFG.U)           {
-          when (io.b_dome(io.b_hart(h).dome).cbo) {
+          when (io.b_field(io.b_hart(h).field).cbo) {
             if (p.nDataBit > 32) {
               r_csr(h).champ.get.envcfg := w_wdata(h)
             } else {
@@ -171,7 +171,7 @@ class Champ(p: CsrParams) extends Module {
       if (p.nDataBit == 32) {
         switch (io.b_write(h).addr) {
           is (ENVCFGH.U)           {
-            when (io.b_dome(io.b_hart(h).dome).cbo) {
+            when (io.b_field(io.b_hart(h).field).cbo) {
               r_csr(h).champ.get.envcfg := Cat(w_wdata(h), r_csr(h).champ.get.envcfg(31, 0))
             }
           }
@@ -179,7 +179,7 @@ class Champ(p: CsrParams) extends Module {
       }
 
       if (p.nChampTrapLvl > 0) {
-        when (io.b_dome(io.b_hart(h).dome).tl(0)) {
+        when (io.b_field(io.b_hart(h).field).tl(0)) {
           switch (io.b_write(h).addr) {
             is (TL0STATUS.U)    {r_csr(h).champ.get.tl0status := w_wdata(h)}
             is (TL0THF.U)       {r_csr(h).champ.get.tl0thf := w_wdata(h)}
@@ -197,7 +197,7 @@ class Champ(p: CsrParams) extends Module {
       }      
 
       if (p.nChampTrapLvl > 1) {
-        when (io.b_dome(io.b_hart(h).dome).tl(1)) {
+        when (io.b_field(io.b_hart(h).field).tl(1)) {
           switch (io.b_write(h).addr) {
             is (TL1STATUS.U)    {r_csr(h).champ.get.tl1status := w_wdata(h)}
             is (TL1THF.U)       {r_csr(h).champ.get.tl1thf := w_wdata(h)}
@@ -225,7 +225,7 @@ class Champ(p: CsrParams) extends Module {
   val w_is_tl1handler = Wire(Vec(p.nHart, Bool()))
 
   for (h <- 0 until p.nHart) {
-    w_is_tl0handler(h) := io.b_dome(io.b_hart(h).dome).tl(0) & (r_csr(h).champ.get.tl0thf === io.b_hfu(h).chf)
+    w_is_tl0handler(h) := io.b_field(io.b_hart(h).field).tl(0) & (r_csr(h).champ.get.tl0thf === io.b_hfu(h).chf)
     if (p.nChampTrapLvl > 1) w_is_tl1handler(h) := (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf) else w_is_tl1handler(h) := false.B
     w_is_tl0deleg(h) := (io.i_trap(h).cause(p.nDataBit - 2, 5) === 0.U) & r_csr(h).champ.get.tl0edeleg(io.i_trap(h).cause(4, 0)) & (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf)
   }
@@ -429,7 +429,7 @@ class Champ(p: CsrParams) extends Module {
   //            DECODER
   // ******************************
   for (h <- 0 until p.nHart) {
-    when (io.b_dome(io.b_hart(h).dome).cbo) {
+    when (io.b_field(io.b_hart(h).field).cbo) {
       io.o_decoder(h).cbie := CBIE.INV
       io.o_decoder(h).cbcfe := true.B
       io.o_decoder(h).cbze := true.B
@@ -441,13 +441,13 @@ class Champ(p: CsrParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
   for (h <- 0 until p.nHart) {
     io.b_hart(h).free := true.B
   }
-  for (d <- 0 until p.nDome) {
-    io.b_dome(d).free := true.B
+  for (f <- 0 until p.nField) {
+    io.b_field(f).free := true.B
   }
 
   // ******************************

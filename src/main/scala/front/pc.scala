@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:38:34 pm                                       *
+ * Last Modified: 2023-03-02 01:18:01 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.champ._
 import herd.core.aubrac.common._
 import herd.core.aubrac.nlp.{NlpReadIO}
@@ -30,13 +30,13 @@ class PcStage(p: FrontParams) extends Module {
 
   val io = IO(new Bundle {
     // Resource state bus
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     // Stage flush bus
     val i_flush = Input(Bool())
 
     // Branch change and information buses
-    val i_br_dome = if (p.useDome) Some(Input(new BranchBus(p.nAddrBit))) else None
+    val i_br_field = if (p.useField) Some(Input(new BranchBus(p.nAddrBit))) else None
     val i_br_new = Input(new BranchBus(p.nAddrBit))
 
     // Next line predictor
@@ -57,7 +57,7 @@ class PcStage(p: FrontParams) extends Module {
   val w_hart_valid = Wire(Bool())
   val w_hart_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_hart_valid := io.b_hart.get.valid
     w_hart_flush := io.b_hart.get.flush
   } else {
@@ -87,12 +87,12 @@ class PcStage(p: FrontParams) extends Module {
       }
     }
   }
-  if (p.useDome) {
-    when (io.i_br_dome.get.valid) {
-      w_pc := io.i_br_dome.get.addr
+  if (p.useField) {
+    when (io.i_br_field.get.valid) {
+      w_pc := io.i_br_field.get.addr
       if (p.useIMemSeq) {
         when (w_lock) {
-          r_pc_next := io.i_br_dome.get.addr
+          r_pc_next := io.i_br_field.get.addr
         }
       }
     }
@@ -186,8 +186,8 @@ class PcStage(p: FrontParams) extends Module {
       r_out.ctrl.get.abort := false.B
     }
   } else {
-    if (p.useDome) {
-      w_lock := r_out.valid & ~io.b_out.ready & ~io.i_br_new.valid & ~io.i_br_dome.get.valid
+    if (p.useField) {
+      w_lock := r_out.valid & ~io.b_out.ready & ~io.i_br_new.valid & ~io.i_br_field.get.valid
     } else {
       w_lock := r_out.valid & ~io.b_out.ready & ~io.i_br_new.valid
     }
@@ -200,9 +200,9 @@ class PcStage(p: FrontParams) extends Module {
   io.b_out.ctrl.get := r_out.ctrl.get
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
-  if (p.useDome) io.b_hart.get.free := true.B
+  if (p.useField) io.b_hart.get.free := true.B
 
   // ******************************
   //            DEBUG

@@ -20,7 +20,7 @@ import chisel3.util._
 import scala.math._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.count.{CsrBus => StatBus}
 import herd.core.aubrac.common._
 import herd.core.aubrac.hfu.{HfuReqCtrlBus, HfuReqDataBus, HfuCsrIO}
@@ -29,8 +29,8 @@ import herd.io.core.clint.{ClintIO}
 
 class Csr(p: CsrParams) extends Module {
   val io = IO(new Bundle {
-    val b_dome = if (p.useDome) Some(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit))) else None
-    val b_hart = if (p.useDome) Some(Vec(p.nHart, new RsrcIO(p.nHart, p.nDome, p.nHart))) else None
+    val b_field = if (p.useField) Some(Vec(p.nField, new FieldIO(p.nAddrBit, p.nDataBit))) else None
+    val b_hart = if (p.useField) Some(Vec(p.nHart, new RsrcIO(p.nHart, p.nField, p.nHart))) else None
 
     val b_read = Vec(p.nHart, new CsrReadIO(p.nDataBit))
     val b_write = Vec(p.nHart, new CsrWriteIO(p.nDataBit))
@@ -52,7 +52,7 @@ class Csr(p: CsrParams) extends Module {
   if (p.useChamp) {
     val m_csr = Module(new Champ(p))
 
-    m_csr.io.b_dome <> io.b_dome.get
+    m_csr.io.b_field <> io.b_field.get
     m_csr.io.b_hart <> io.b_hart.get
 
     m_csr.io.b_read <> io.b_read

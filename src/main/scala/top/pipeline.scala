@@ -1,10 +1,10 @@
 /*
- * File: pipeline.scala
+ * File: pipeline.scala                                                        *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:34:15 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 01:36:36 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,7 +18,7 @@ package herd.core.aubrac
 import chisel3._
 import chisel3.util._
 
-import herd.common.dome._
+import herd.common.field._
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.nlp._
@@ -32,13 +32,13 @@ import herd.io.core.clint.{ClintIO}
 
 class Pipeline (p: PipelineParams) extends Module {
   val io = IO(new Bundle {
-    val b_dome = if (p.useDome) Some(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit))) else None
-    val b_hart = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_field = if (p.useField) Some(Vec(p.nField, new FieldIO(p.nAddrBit, p.nDataBit))) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
 
     val b_imem = new Mb4sIO(p.pL0IBus)
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
-    val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
+    val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useField, p.nField, p.nAddrBit)) else None
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
@@ -57,16 +57,16 @@ class Pipeline (p: PipelineParams) extends Module {
   //          FRONT & NLP
   // ******************************
   if (p.useNlp) {    
-    if (p.useDome) m_nlp.get.io.b_hart.get <> io.b_hart.get
+    if (p.useField) m_nlp.get.io.b_hart.get <> io.b_hart.get
     m_nlp.get.io.i_mispred := m_back.io.o_br_new.valid
     m_nlp.get.io.b_read <> m_front.io.b_nlp.get
     m_nlp.get.io.i_info := m_back.io.o_br_info
   }
   
-  if (p.useDome) {
+  if (p.useField) {
     m_front.io.b_hart.get <> io.b_hart.get
     m_front.io.i_flush := m_back.io.o_flush | io.b_hfu.get.ctrl.pipe_flush
-    m_front.io.i_br_dome.get := io.b_hfu.get.ctrl.pipe_br
+    m_front.io.i_br_field.get := io.b_hfu.get.ctrl.pipe_br
   } else {
     m_front.io.i_flush := m_back.io.o_flush
   }
@@ -77,8 +77,8 @@ class Pipeline (p: PipelineParams) extends Module {
   // ******************************
   //             BACK
   // ******************************  
-  if (p.useDome) {
-    m_back.io.b_dome.get <> io.b_dome.get
+  if (p.useField) {
+    m_back.io.b_field.get <> io.b_field.get
     m_back.io.b_hart.get <> io.b_hart.get
     m_back.io.i_flush := io.b_hfu.get.ctrl.pipe_flush
   } else {
@@ -98,9 +98,9 @@ class Pipeline (p: PipelineParams) extends Module {
   m_back.io.b_clint <> io.b_clint
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     if (p.useNlp) {
       io.b_hart.get.free := m_front.io.b_hart.get.free & m_back.io.b_hart.get.free & m_nlp.get.io.b_hart.get.free
     } else {

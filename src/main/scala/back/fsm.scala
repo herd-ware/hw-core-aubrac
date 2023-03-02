@@ -18,16 +18,16 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
-import herd.common.dome._
+import herd.common.field._
 import herd.core.aubrac.common._
 import herd.io.core.clint.{ClintIO}
 
 
 class Fsm (nHart: Int, useChamp: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBit: Int) extends Module {
-  def useDome: Boolean = useChamp
+  def useField: Boolean = useChamp
   
   val io = IO(new Bundle {
-    val b_hart = if (useDome) Some(new RsrcIO(nHart, 1, 1)) else None
+    val b_hart = if (useField) Some(new RsrcIO(nHart, 1, 1)) else None
 
     val i_stop = Input(Bool())
     val i_empty = Input(Bool())
@@ -55,7 +55,7 @@ class Fsm (nHart: Int, useChamp: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBi
   val w_hart_valid = Wire(Bool())
   val w_hart_flush = Wire(Bool())
 
-  if (useDome) {
+  if (useField) {
     w_hart_valid := io.b_hart.get.valid & ~io.b_hart.get.flush
     w_hart_flush := io.b_hart.get.flush
   } else {
@@ -217,9 +217,9 @@ class Fsm (nHart: Int, useChamp: Boolean, nInstrBit: Int, nAddrBit: Int, nDataBi
   }  
   
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (useDome) {
+  if (useField) {
     io.b_hart.get.free := (r_reg.state === STATE.RUN)
   } 
 }

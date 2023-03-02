@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.mem.mb4s._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.tools._
 import herd.core.aubrac.nlp.{NlpReadIO}
 import herd.core.aubrac.common._
@@ -29,7 +29,7 @@ import herd.core.aubrac.common._
 class Front (p: FrontParams) extends Module {
   val io = IO(new Bundle {
     // Resource management bus
-    val b_hart = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
 
     // Front management buses
     val i_flush = Input(Bool())
@@ -37,7 +37,7 @@ class Front (p: FrontParams) extends Module {
     // Branch change and information buses
     val o_br_next = Output(new BranchBus(p.nAddrBit))
     val o_br_new = if (p.useFastJal) Some(Output(new BranchBus(p.nAddrBit))) else None
-    val i_br_dome = if (p.useDome) Some(Input(new BranchBus(p.nAddrBit))) else None
+    val i_br_field = if (p.useField) Some(Input(new BranchBus(p.nAddrBit))) else None
     val i_br_new = Input(new BranchBus(p.nAddrBit))
     
     // Next line predictor
@@ -124,9 +124,9 @@ class Front (p: FrontParams) extends Module {
   // ******************************
   //        PROGRAM COUNTER
   // ******************************
-  if (p.useDome) {    
+  if (p.useField) {    
     m_pc.io.b_hart.get <> io.b_hart.get
-    m_pc.io.i_br_dome.get := io.i_br_dome.get
+    m_pc.io.i_br_field.get := io.i_br_field.get
   }  
   m_pc.io.i_flush := w_flush | m_if2.io.o_dead
   m_pc.io.i_br_new := w_br_new
@@ -135,7 +135,7 @@ class Front (p: FrontParams) extends Module {
   // ******************************
   //      INSTRUCTION FETCH 0
   // ******************************
-  if (p.useDome) m_if0.io.b_hart.get <> io.b_hart.get   
+  if (p.useField) m_if0.io.b_hart.get <> io.b_hart.get   
   m_if0.io.i_flush := w_flush | m_if2.io.o_dead
   m_if0.io.b_in <> m_pc.io.b_out
   m_if0.io.b_imem <> io.b_imem.req
@@ -143,14 +143,14 @@ class Front (p: FrontParams) extends Module {
   // ******************************
   //      INSTRUCTION FETCH 1
   // ******************************
-  if (p.useDome) m_if1.io.b_hart.get <> io.b_hart.get
+  if (p.useField) m_if1.io.b_hart.get <> io.b_hart.get
   m_if1.io.i_flush := w_flush | m_if2.io.o_dead
   m_if1.io.b_in <> m_if0.io.b_out
 
   // ******************************
   //      INSTRUCTION FETCH 2
   // ******************************
-  if (p.useDome) m_if2.io.b_hart.get <> io.b_hart.get
+  if (p.useField) m_if2.io.b_hart.get <> io.b_hart.get
   m_if2.io.i_flush := w_flush
   m_if2.io.b_in <> m_if1.io.b_out
   m_if2.io.b_imem.read <> io.b_imem.read
@@ -159,7 +159,7 @@ class Front (p: FrontParams) extends Module {
   // ******************************
   //      INSTRUCTION FETCH 3
   // ******************************
-  if (p.useDome) m_if3.io.b_hart.get <> io.b_hart.get
+  if (p.useField) m_if3.io.b_hart.get <> io.b_hart.get
   m_if3.io.i_flush := io.i_flush
   m_if3.io.b_in <> m_if2.io.b_out
   if (p.useFastJal) m_if3.io.i_br_next.get := w_br_next
@@ -174,9 +174,9 @@ class Front (p: FrontParams) extends Module {
   io.o_br_next.addr := m_if3.io.b_out(0).ctrl.get.pc
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_hart.get.free := m_pc.io.b_hart.get.free & m_if0.io.b_hart.get.free & m_if1.io.b_hart.get.free & m_if2.io.b_hart.get.free & m_if3.io.b_hart.get.free
   }  
 

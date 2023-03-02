@@ -1,10 +1,10 @@
 /*
- * File: mem.scala
+ * File: mem.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:39:50 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 12:21:55 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.mem.mb4s._
 import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
@@ -30,7 +30,7 @@ import herd.core.aubrac.back.csr.{CsrReadIO}
 
 class MemStage (p: BackParams) extends Module {
   val io = IO(new Bundle {
-    val b_back = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
 
     val i_flush = Input(Bool())
     val o_flush = Output(Bool())
@@ -58,7 +58,7 @@ class MemStage (p: BackParams) extends Module {
   val w_back_valid = Wire(Bool())
   val w_back_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_back_valid := io.b_back.get.valid & ~io.b_back.get.flush
     w_back_flush := io.b_back.get.flush | io.i_flush
   } else {
@@ -82,7 +82,7 @@ class MemStage (p: BackParams) extends Module {
 
   if (p.useMemStage && (p.nExStage == 1)) {
     io.b_dmem.get.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.use & ~w_lock & ~w_flush & w_back_valid
-    if (p.useDome) io.b_dmem.get.dome.get := io.b_back.get.dome
+    if (p.useField) io.b_dmem.get.field.get := io.b_back.get.field
     io.b_dmem.get.ctrl.hart := io.b_in.ctrl.get.info.hart
     io.b_dmem.get.ctrl.op := io.b_in.ctrl.get.lsu.uop
     if (p.useExtA) io.b_dmem.get.ctrl.amo.get := io.b_in.ctrl.get.lsu.amo
@@ -211,9 +211,9 @@ class MemStage (p: BackParams) extends Module {
   io.o_stop := io.b_in.valid & ~w_flush & w_exc_misalign 
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_back.get.free := ~m_out.io.o_val.valid
   } 
 

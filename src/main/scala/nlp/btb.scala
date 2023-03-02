@@ -19,13 +19,13 @@ import chisel3._
 import chisel3.util._
 import scala.math._
 
-import herd.common.dome._
+import herd.common.field._
 import herd.common.mem.replace._
 
 
 class Btb (p: BtbParams) extends Module {
   val io = IO(new Bundle {
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     val b_read = Vec(p.nReadPort, new BtbReadIO(p))
     val b_write = new BtbWriteIO(p)
@@ -40,7 +40,7 @@ class Btb (p: BtbParams) extends Module {
   // ******************************
   val w_flush = Wire(Bool())
 
-  if (p.useDome) w_flush := io.b_hart.get.flush else w_flush := false.B
+  if (p.useField) w_flush := io.b_hart.get.flush else w_flush := false.B
 
   // ******************************
   //             READ
@@ -137,9 +137,9 @@ class Btb (p: BtbParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_hart.get.free := ~r_valid.asUInt.orR & w_pol_free.asUInt.orR
   }
 }

@@ -23,7 +23,7 @@ import herd.common.isa.champ._
 
 
 class Check(p: HfuParams) extends Module {
-  def nRange: Int = p.pDomeCfg.nRange
+  def nRange: Int = p.pFieldStruct.nRange
 
   val io = IO(new Bundle {
     val b_req = Flipped(new GenRVIO(p, new CheckReqCtrlBus(), new CheckReqDataBus(p)))

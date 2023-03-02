@@ -1,10 +1,10 @@
 /*
- * File: rmr.scala
+ * File: rmr.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:32:55 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 01:54:27 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,7 +20,7 @@ import chisel3.util._
 import chisel3.experimental.ChiselEnum
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.champ._
 import herd.common.tools.Counter
 import herd.core.aubrac.common._
@@ -38,15 +38,15 @@ class Rmr (p: HfuParams) extends Module {
   val io = IO(new Bundle {
     val b_req = Flipped(new RmrReqIO(p))
 
-    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
+    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pFieldStruct))
 
     val o_flush = Output(Bool())
-    val b_dome = Flipped(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit)))
-    val b_hart = Flipped(new RsrcIO(p.nHart, p.nDome, 1))
-    val b_pexe = Flipped(new NRsrcIO(p.nHart, p.nDome, p.nPart))
-    val b_pall = Flipped(new NRsrcIO(p.nHart, p.nDome, p.nPart))
+    val b_field = Flipped(Vec(p.nField, new FieldIO(p.nAddrBit, p.nDataBit)))
+    val b_hart = Flipped(new RsrcIO(p.nHart, p.nField, 1))
+    val b_pexe = Flipped(new NRsrcIO(p.nHart, p.nField, p.nPart))
+    val b_pall = Flipped(new NRsrcIO(p.nHart, p.nField, p.nPart))
 
-    val o_br_dome = Output(new BranchBus(p.nAddrBit))
+    val o_br_field = Output(new BranchBus(p.nAddrBit))
   })
 
   val r_fsm = RegInit(s0IDLE)
@@ -142,10 +142,10 @@ class Rmr (p: HfuParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  // Default dome state registers
-  val init_state = Wire(Vec(p.nDome, new RmrDomeBus(p)))
+  // Default field state registers
+  val init_state = Wire(Vec(p.nField, new RmrFieldBus(p)))
 
   init_state := DontCare
   init_state(0).id := 0.U
@@ -153,13 +153,13 @@ class Rmr (p: HfuParams) extends Module {
 
   val r_state = RegInit(init_state)
 
-  // Default dome at boot
-  val init_dome = Wire(UInt(log2Ceil(p.nDome).W))
+  // Default field at boot
+  val init_field = Wire(UInt(log2Ceil(p.nField).W))
 
-  init_dome := 0.U
+  init_field := 0.U
 
-  val r_exe_dome = RegInit(init_dome)
-  val r_fr_state = RegInit(init_dome)
+  val r_exe_field = RegInit(init_field)
+  val r_fr_state = RegInit(init_field)
 
   // Default resources multiplexing
   val r_mux = RegInit(VecInit(Seq.fill(2)(RMRMUX.EXE)))
@@ -167,24 +167,24 @@ class Rmr (p: HfuParams) extends Module {
   // ------------------------------
   //             STATE
   // ------------------------------
-  val w_dome_used = Wire(Vec(p.nDome, Bool()))
+  val w_field_used = Wire(Vec(p.nField, Bool()))
 
-  val w_dome_exe_here = Wire(Bool())
-  val w_dome_exe_used = Wire(Vec(p.nDome, Bool()))
-  val w_dome_exe_slct = Wire(UInt(log2Ceil(p.nDome).W))
+  val w_field_exe_here = Wire(Bool())
+  val w_field_exe_used = Wire(Vec(p.nField, Bool()))
+  val w_field_exe_slct = Wire(UInt(log2Ceil(p.nField).W))
 
-  // Dome in Rmr registers ?
-  w_dome_exe_here := false.B
-  w_dome_exe_slct := 0.U
+  // Field in Rmr registers ?
+  w_field_exe_here := false.B
+  w_field_exe_slct := 0.U
 
-  for (d <- 0 until p.nDome) {
+  for (f <- 0 until p.nField) {
     // Same security ? (mie)
     val w_exe_mie = Wire(Bool())
     val w_fr_mie = Wire(Bool())
 
     if (p.useChampExtMie) {
-      w_exe_mie := (r_state(d).mie === io.i_state.cur.hf.cap.secmie)
-      w_fr_mie := (r_state(d).mie === io.i_state.fr.hf.cap.secmie)
+      w_exe_mie := (r_state(f).mie === io.i_state.cur.hf.cap.secmie)
+      w_fr_mie := (r_state(f).mie === io.i_state.fr.hf.cap.secmie)
     } else {
       w_exe_mie := true.B
       w_fr_mie := true.B
@@ -195,65 +195,65 @@ class Rmr (p: HfuParams) extends Module {
     val w_fr_cst = Wire(Bool())
 
     if (p.useChampExtCst) {
-      w_exe_cst := (r_state(d).cst === io.i_state.cur.hf.cap.seccst)
-      w_fr_cst := (r_state(d).cst === io.i_state.fr.hf.cap.seccst)
+      w_exe_cst := (r_state(f).cst === io.i_state.cur.hf.cap.seccst)
+      w_fr_cst := (r_state(f).cst === io.i_state.fr.hf.cap.seccst)
     } else {
       w_exe_cst := true.B
       w_fr_cst := true.B
     }
 
     // Compare all
-    w_dome_used(d) := false.B
+    w_field_used(f) := false.B
 
-    when ((r_state(d).id === io.i_state.cur.hf.id.toUInt) & w_exe_mie & w_exe_cst) {
-      w_dome_used(d) := true.B
-      w_dome_exe_here := true.B
-      w_dome_exe_slct := d.U
+    when ((r_state(f).id === io.i_state.cur.hf.id.toUInt) & w_exe_mie & w_exe_cst) {
+      w_field_used(f) := true.B
+      w_field_exe_here := true.B
+      w_field_exe_slct := f.U
     }
 
     if (p.useChampExtFr) {
-      when (io.i_state.fr.valid & (r_state(d).id === io.i_state.fr.hf.id.toUInt) & w_fr_mie & w_fr_cst) {
-        w_dome_used(d) := true.B
+      when (io.i_state.fr.valid & (r_state(f).id === io.i_state.fr.hf.id.toUInt) & w_fr_mie & w_fr_cst) {
+        w_field_used(f) := true.B
       }
     }    
   }
 
   // ------------------------------
-  //          DOME SELECT
+  //         FIELD SELECT
   // ------------------------------
-  w_dome_exe_used := w_dome_used
-  when (~w_dome_exe_here) {
-    w_dome_exe_slct := PriorityEncoder(~w_dome_exe_used.asUInt)
+  w_field_exe_used := w_field_used
+  when (~w_field_exe_here) {
+    w_field_exe_slct := PriorityEncoder(~w_field_exe_used.asUInt)
   }
 
   switch(r_fsm) {
     is (s2SWLAUNCH) {
-      r_exe_dome := w_dome_exe_slct
+      r_exe_field := w_field_exe_slct
 
-      when(~w_dome_exe_here) {
-        r_state(w_dome_exe_slct).id      := io.i_state.fr.hf.id.toUInt
-        r_state(w_dome_exe_slct).mie     := io.i_state.fr.hf.cap.secmie
-        r_state(w_dome_exe_slct).cst     := io.i_state.fr.hf.cap.seccst
-        r_state(w_dome_exe_slct).use(0)  := true.B
+      when(~w_field_exe_here) {
+        r_state(w_field_exe_slct).id      := io.i_state.fr.hf.id.toUInt
+        r_state(w_field_exe_slct).mie     := io.i_state.fr.hf.cap.secmie
+        r_state(w_field_exe_slct).cst     := io.i_state.fr.hf.cap.seccst
+        r_state(w_field_exe_slct).use(0)  := true.B
       }
 
       when (r_reg.fr_sw) {
-        r_fr_state := r_exe_dome
+        r_fr_state := r_exe_field
 
         r_state(r_fr_state).use(1)       := false.B
-        r_state(r_exe_dome).use(1)       := true.B
+        r_state(r_exe_field).use(1)       := true.B
       }
     }
 
     is (s4FREXE) {
-      r_fr_state := r_exe_dome
+      r_fr_state := r_exe_field
 
       r_state(r_fr_state).use(1)          := false.B
     }
   }
 
   // ------------------------------
-  //        DOME MULTIPLEXING
+  //       FIELD MULTIPLEXING
   // ------------------------------
   switch(r_fsm) {
     is (s2SWLAUNCH) {
@@ -283,29 +283,29 @@ class Rmr (p: HfuParams) extends Module {
   // ------------------------------
   //             I/Os
   // ------------------------------
-  // Multiple domes
+  // Multiple fields
   if (p.useChampExtFr) {
-    for (d <- 0 until p.nDome) {
-      io.b_dome(d).valid := r_state(d).use.asUInt.orR 
-      io.b_dome(d).id := r_state(d).id
-      io.b_dome(d).entry := Mux(r_state(d).use(1), io.i_state.fr.hf.entry, io.i_state.cur.hf.entry)
-      io.b_dome(d).exe := r_state(d).use(0)
-      io.b_dome(d).flush := (r_state(d).use(0) & r_reg.cur_flush) | (r_state(d).use(1) & r_reg.fr_flush)
-      io.b_dome(d).tl := Mux(r_state(d).use(1), io.i_state.fr.hf.cap.featl, io.i_state.cur.hf.cap.featl)
-      io.b_dome(d).cbo := Mux(r_state(d).use(1), io.i_state.fr.hf.cap.feacbo, io.i_state.cur.hf.cap.feacbo)
-      io.b_dome(d).mie := r_state(d).mie
+    for (f <- 0 until p.nField) {
+      io.b_field(f).valid := r_state(f).use.asUInt.orR 
+      io.b_field(f).id := r_state(f).id
+      io.b_field(f).entry := Mux(r_state(f).use(1), io.i_state.fr.hf.entry, io.i_state.cur.hf.entry)
+      io.b_field(f).exe := r_state(f).use(0)
+      io.b_field(f).flush := (r_state(f).use(0) & r_reg.cur_flush) | (r_state(f).use(1) & r_reg.fr_flush)
+      io.b_field(f).tl := Mux(r_state(f).use(1), io.i_state.fr.hf.cap.featl, io.i_state.cur.hf.cap.featl)
+      io.b_field(f).cbo := Mux(r_state(f).use(1), io.i_state.fr.hf.cap.feacbo, io.i_state.cur.hf.cap.feacbo)
+      io.b_field(f).mie := r_state(f).mie
     }   
 
-  /// One domes
+  /// One fields
   } else {
-    io.b_dome(0).valid := true.B
-    io.b_dome(0).id := io.i_state.cur.hf.id.toUInt
-    io.b_dome(0).entry := io.i_state.cur.hf.entry
-    io.b_dome(0).exe := true.B
-    io.b_dome(0).flush := r_reg.cur_flush
-    io.b_dome(0).tl := io.i_state.cur.hf.cap.featl
-    io.b_dome(0).cbo := io.i_state.cur.hf.cap.feacbo
-    io.b_dome(0).mie := io.i_state.cur.hf.cap.secmie
+    io.b_field(0).valid := true.B
+    io.b_field(0).id := io.i_state.cur.hf.id.toUInt
+    io.b_field(0).entry := io.i_state.cur.hf.entry
+    io.b_field(0).exe := true.B
+    io.b_field(0).flush := r_reg.cur_flush
+    io.b_field(0).tl := io.i_state.cur.hf.cap.featl
+    io.b_field(0).cbo := io.i_state.cur.hf.cap.feacbo
+    io.b_field(0).mie := io.i_state.cur.hf.cap.secmie
   }
 
   // ******************************
@@ -318,23 +318,23 @@ class Rmr (p: HfuParams) extends Module {
   io.b_hart.valid := true.B
   io.b_hart.flush := r_reg.cur_flush
   io.b_hart.hart := 0.U
-  io.b_hart.dome := r_exe_dome
+  io.b_hart.field := r_exe_field
   io.b_hart.port := 0.U
 
   // ------------------------------
-  //     ONLY FOR EXECUTED DOME
+  //     ONLY FOR EXECUTEDFIELD
   // ------------------------------
-  // Parts for executed domes
+  // Parts for executed fields
   io.b_pexe.weight(0) := p.nPart.U
-  for (d <- 1 until p.nDome) {
-    io.b_pexe.weight(d) := 0.U
+  for (f <- 1 until p.nField) {
+    io.b_pexe.weight(f) := 0.U
   }
   
   for (pa <- 0 until p.nPart) {
     io.b_pexe.state(pa).valid := true.B
-    io.b_pexe.state(pa).flush := r_exe_dome
+    io.b_pexe.state(pa).flush := r_exe_field
     io.b_pexe.state(pa).hart := 0.U
-    io.b_pexe.state(pa).dome := 0.U
+    io.b_pexe.state(pa).field := 0.U
     io.b_pexe.state(pa).port := 0.U
   }
 
@@ -342,15 +342,15 @@ class Rmr (p: HfuParams) extends Module {
   //         ALL RESOURCES
   // ------------------------------
   if (p.useChampExtFr) {
-    for (d <- 0 until p.nDome) {
-      io.b_pall.weight(d) := 0.U
+    for (f <- 0 until p.nField) {
+      io.b_pall.weight(f) := 0.U
     }
 
-    when ((r_exe_dome =/= r_fr_state) & (r_mux(0) === RMRMUX.FR) | (r_mux(1) === RMRMUX.FR)) {
-      io.b_pall.weight(r_exe_dome) := (p.nPart - 1).U
+    when ((r_exe_field =/= r_fr_state) & (r_mux(0) === RMRMUX.FR) | (r_mux(1) === RMRMUX.FR)) {
+      io.b_pall.weight(r_exe_field) := (p.nPart - 1).U
       io.b_pall.weight(r_fr_state) := 1.U
     }.otherwise {
-      io.b_pall.weight(r_exe_dome) := p.nPart.U
+      io.b_pall.weight(r_exe_field) := p.nPart.U
       io.b_pall.weight(r_fr_state) := 0.U
     }    
 
@@ -358,7 +358,7 @@ class Rmr (p: HfuParams) extends Module {
       io.b_pall.state(pa).valid := true.B
       io.b_pall.state(pa).flush := r_reg.cur_flush
       io.b_pall.state(pa).hart := 0.U
-      io.b_pall.state(pa).dome := r_exe_dome
+      io.b_pall.state(pa).field := r_exe_field
       io.b_pall.state(pa).port := 0.U
     }
 
@@ -367,7 +367,7 @@ class Rmr (p: HfuParams) extends Module {
         io.b_pall.state(pa).valid := r_state(r_fr_state).use(1)
         io.b_pall.state(pa).flush := r_reg.fr_flush
         io.b_pall.state(pa).hart := 0.U
-        io.b_pall.state(pa).dome := r_fr_state
+        io.b_pall.state(pa).field := r_fr_state
         io.b_pall.state(pa).port := 0.U
       }
     }
@@ -377,7 +377,7 @@ class Rmr (p: HfuParams) extends Module {
       io.b_pall.state(pa).valid := true.B
       io.b_pall.state(pa).flush := r_reg.cur_flush
       io.b_pall.state(pa).hart := 0.U
-      io.b_pall.state(pa).dome := r_exe_dome
+      io.b_pall.state(pa).field := r_exe_field
       io.b_pall.state(pa).port := 0.U
     }
   }
@@ -388,9 +388,9 @@ class Rmr (p: HfuParams) extends Module {
   val w_exe_free = Wire(Vec(p.nPart, Bool()))
   val w_fr_free = Wire(Vec(2, Bool()))
 
-  val m_cst = Module(new Counter(log2Ceil(p.nDomeFlushCycle + 1)))
+  val m_cst = Module(new Counter(log2Ceil(p.nFieldFlushCycle + 1)))
 
-  m_cst.io.i_limit := p.nDomeFlushCycle.U
+  m_cst.io.i_limit := p.nFieldFlushCycle.U
   m_cst.io.i_init := ~(r_reg.cur_flush & r_reg.fr_flush)
   m_cst.io.i_en := r_reg.cur_flush | r_reg.fr_flush
 
@@ -417,30 +417,30 @@ class Rmr (p: HfuParams) extends Module {
   }
 
   if (p.useChampExtCst) {
-    when ((r_reg.cur_flush & r_state(r_exe_dome).cst) | (r_reg.fr_flush & r_state(r_fr_state).cst)) {
+    when ((r_reg.cur_flush & r_state(r_exe_field).cst) | (r_reg.fr_flush & r_state(r_fr_state).cst)) {
       r_reg.cur_free := m_cst.io.o_flag
       r_reg.fr_free := m_cst.io.o_flag
     }.otherwise {
-      r_reg.cur_free := r_reg.cur_flush & w_exe_free.asUInt.andR & io.b_hart.free & io.b_dome(0).free
+      r_reg.cur_free := r_reg.cur_flush & w_exe_free.asUInt.andR & io.b_hart.free & io.b_field(0).free
       r_reg.fr_free := r_reg.fr_flush & w_fr_free.asUInt.andR
     }
   } else {
-    r_reg.cur_free := r_reg.cur_flush & w_exe_free.asUInt.andR & io.b_hart.free & io.b_dome(0).free
+    r_reg.cur_free := r_reg.cur_flush & w_exe_free.asUInt.andR & io.b_hart.free & io.b_field(0).free
     r_reg.fr_free := r_reg.fr_flush & w_fr_free.asUInt.andR
   }
 
   // ------------------------------
   //             BOOT
   // ------------------------------
-  io.o_br_dome.valid := (r_fsm === s2SWLAUNCH)
-  io.o_br_dome.addr := r_reg.target
+  io.o_br_field.valid := (r_fsm === s2SWLAUNCH)
+  io.o_br_field.addr := r_reg.target
 
   // ******************************
   //             DEBUG
   // ******************************
   if (p.debug) {
     dontTouch(io.b_hart)
-    dontTouch(io.b_dome)
+    dontTouch(io.b_field)
     dontTouch(io.b_pall)
     dontTouch(io.b_pexe)
   }  

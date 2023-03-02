@@ -25,9 +25,9 @@ import herd.core.aubrac.common._
 // ******************************
 //       INTEGER UNIT BUS
 // ******************************
-class IntUnitCtrlBus(nHart: Int, useDome: Boolean, nDome: Int, nAddrBit: Int) extends Bundle {
+class IntUnitCtrlBus(nHart: Int, useField: Boolean, nField: Int, nAddrBit: Int) extends Bundle {
   val hart = UInt(log2Ceil(nHart).W)
-  val dome = if (useDome) Some(UInt(log2Ceil(nDome).W)) else None
+  val field = if (useField) Some(UInt(log2Ceil(nField).W)) else None
   val uop = UInt(INTUOP.NBIT.W)
   val pc = UInt(nAddrBit.W)
   val ssign = Vec(3, Bool())
@@ -42,7 +42,7 @@ class IntUnitDataBus(nDataBit: Int) extends Bundle {
 }
 
 class IntUnitIO(p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int) extends Bundle {
-  val req = Flipped(new GenRVIO(p, new IntUnitCtrlBus(nHart, p.useDome, p.nDome, nAddrBit), new IntUnitDataBus(nDataBit)))
+  val req = Flipped(new GenRVIO(p, new IntUnitCtrlBus(nHart, p.useField, p.nField, nAddrBit), new IntUnitDataBus(nDataBit)))
   val ack = new GenRVIO(p, UInt(0.W), UInt(nDataBit.W))
 }
 

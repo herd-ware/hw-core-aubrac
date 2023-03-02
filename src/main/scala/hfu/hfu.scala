@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.mem.mb4s._
 import herd.common.isa.champ._
 import herd.core.aubrac.common._
@@ -29,14 +29,14 @@ class Hfu (p: HfuParams) extends Module {
   val io = IO(new Bundle {
     val b_port = new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl)
 
-    val b_dome = Flipped(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit)))
-    val b_hart = Flipped(new RsrcIO(p.nHart, p.nDome, 1))
-    val b_pexe = Flipped(new NRsrcIO(p.nHart, p.nDome, p.nPart))
-    val b_pall = Flipped(new NRsrcIO(p.nHart, p.nDome, p.nPart))
+    val b_field = Flipped(Vec(p.nField, new FieldIO(p.nAddrBit, p.nDataBit)))
+    val b_hart = Flipped(new RsrcIO(p.nHart, p.nField, 1))
+    val b_pexe = Flipped(new NRsrcIO(p.nHart, p.nField, p.nPart))
+    val b_pall = Flipped(new NRsrcIO(p.nHart, p.nField, p.nPart))
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
 
-    val o_state = Output(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
+    val o_state = Output(new RegFileStateBus(p.nChampReg, p.pFieldStruct))
 
     val o_dbg = if (p.debug) Some(Output(Vec(p.nChampReg, Vec(6, UInt(p.nDataBit.W))))) else None
   })
@@ -95,7 +95,7 @@ class Hfu (p: HfuParams) extends Module {
   m_rmr.io.b_req <> m_ctrl.io.b_rmr
   m_rmr.io.i_state := m_rf.io.o_state
 
-  io.b_dome <> m_rmr.io.b_dome
+  io.b_field <> m_rmr.io.b_field
   io.b_hart <> m_rmr.io.b_hart
   io.b_pexe <> m_rmr.io.b_pexe
   io.b_pall <> m_rmr.io.b_pall
@@ -111,7 +111,7 @@ class Hfu (p: HfuParams) extends Module {
   io.o_state := m_rf.io.o_state
   io.b_port.ctrl.hfu_free := false.B
   io.b_port.ctrl.pipe_flush := m_rmr.io.o_flush
-  io.b_port.ctrl.pipe_br := m_rmr.io.o_br_dome
+  io.b_port.ctrl.pipe_br := m_rmr.io.o_br_field
 
   // ******************************
   //             DEBUG

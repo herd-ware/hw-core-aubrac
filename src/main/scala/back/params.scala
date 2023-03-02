@@ -89,7 +89,7 @@ trait BackParams extends GprParams
   def nDataByte: Int = (nDataBit / 8).toInt
 
   def useChamp: Boolean
-  def nDome: Int
+  def nField: Int
   def nPart: Int
   def nChampTrapLvl: Int
 
@@ -129,9 +129,9 @@ trait BackParams extends GprParams
     useAmo = useExtA,
     nDataByte = nDataByte,
     
-    useDome = useChamp,
-    nDome = nDome,
-    multiDome = false
+    useField = useChamp,
+    nField = nField,
+    multiField = false
   )
 }
 
@@ -142,7 +142,7 @@ case class BackConfig (
   nDataBit: Int,
   
   useChamp: Boolean,
-  nDome: Int,
+  nField: Int,
   nPart: Int,
   nChampTrapLvl: Int,
 

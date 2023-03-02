@@ -29,9 +29,9 @@ trait CsrParams extends GenParams {
   def nDataBit: Int
 
   def useChamp: Boolean
-  def useDome: Boolean = useChamp
-  def nDome: Int
-  def multiDome: Boolean = false
+  def useField: Boolean = useChamp
+  def nField: Int
+  def multiField: Boolean = false
   def nPart: Int
   def nChampTrapLvl: Int
 }
@@ -43,7 +43,7 @@ case class CsrConfig (
   nDataBit: Int,
   
   useChamp: Boolean,
-  nDome: Int,
+  nField: Int,
   nPart: Int,
   nChampTrapLvl: Int
 ) extends CsrParams

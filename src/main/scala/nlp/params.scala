@@ -23,8 +23,8 @@ import chisel3.util._
 //              BTB
 // ******************************
 trait BtbParams {
-  def useDome: Boolean
-  def nDome: Int
+  def useField: Boolean
+  def nField: Int
 
   def nReadPort: Int
   def nLine: Int
@@ -33,8 +33,8 @@ trait BtbParams {
 }
 
 case class BtbConfig (
-  useDome: Boolean,
-  nDome: Int,
+  useField: Boolean,
+  nField: Int,
 
   nReadPort: Int,
   nLine: Int,
@@ -46,8 +46,8 @@ case class BtbConfig (
 //              BHT
 // ******************************
 trait BhtParams {
-  def useDome: Boolean
-  def nDome: Int
+  def useField: Boolean
+  def nField: Int
 
   def nReadPort: Int
   def nBit: Int
@@ -58,8 +58,8 @@ trait BhtParams {
 }
 
 case class BhtConfig (
-  useDome: Boolean,
-  nDome: Int,
+  useField: Boolean,
+  nField: Int,
 
   nReadPort: Int,
   nSet: Int,
@@ -71,8 +71,8 @@ case class BhtConfig (
 //              RSB
 // ******************************
 trait RsbParams {
-  def useDome: Boolean
-  def nDome: Int
+  def useField: Boolean
+  def nField: Int
 
   def useSpec: Boolean
   def nDepth: Int
@@ -80,8 +80,8 @@ trait RsbParams {
 }
 
 case class RsbConfig (
-  useDome: Boolean,
-  nDome: Int,
+  useField: Boolean,
+  nField: Int,
 
   useSpec: Boolean,
   nDepth: Int,
@@ -92,8 +92,8 @@ case class RsbConfig (
 //              NLP
 // ******************************
 trait NlpParams {
-  def useDome: Boolean
-  def nDome: Int
+  def useField: Boolean
+  def nField: Int
 
   def nAddrBit: Int
   def nInstrByte: Int
@@ -102,8 +102,8 @@ trait NlpParams {
 
   def nBtbLine: Int
   def pBtb: BtbParams = new BtbConfig(
-    useDome = useDome,
-    nDome = nDome,
+    useField = useField,
+    nField = nField,
 
     nReadPort = nFetchInstr,
     nLine = nBtbLine,
@@ -115,8 +115,8 @@ trait NlpParams {
   def nBhtSetEntry: Int
   def nBhtBit: Int
   def pBht: BhtParams = new BhtConfig(
-    useDome = useDome,
-    nDome = nDome,
+    useField = useField,
+    nField = nField,
 
     nReadPort = nFetchInstr,
     nSet = nBhtSet,
@@ -127,8 +127,8 @@ trait NlpParams {
   def useRsbSpec: Boolean
   def nRsbDepth: Int
   def pRsb: RsbParams = new RsbConfig(
-    useDome = useDome,
-    nDome = nDome,
+    useField = useField,
+    nField = nField,
 
     useSpec = useRsbSpec,
     nDepth = nRsbDepth,
@@ -137,8 +137,8 @@ trait NlpParams {
 }
 
 case class NlpConfig ( 
-  useDome: Boolean,
-  nDome: Int,
+  useField: Boolean,
+  nField: Int,
 
   nAddrBit: Int,
   nInstrByte: Int,

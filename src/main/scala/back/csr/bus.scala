@@ -1,10 +1,10 @@
 /*
- * File: bus.scala
+ * File: bus.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:38:31 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 12:19:54 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -76,10 +76,10 @@ class CsrMemIO extends Bundle {
 }
 
 // ******************************
-//             DOME
+//            FIELD
 // ******************************
-class DomeForceBus(nDataBit: Int) extends Bundle {
+class FieldForceBus(nDataBit: Int) extends Bundle {
   val valid   = Bool()
   val pc      = UInt(nDataBit.W)
-  val dome    = UInt(nDataBit.W)
+  val field   = UInt(nDataBit.W)
 }

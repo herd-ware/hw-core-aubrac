@@ -1,10 +1,10 @@
 /*
- * File: rr.scala
+ * File: rr.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:33:11 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 01:34:56 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -30,7 +30,6 @@ class SlctSource(nDataBit: Int) extends Module {
     val i_in = Input(UInt(nDataBit.W))
     val i_tl0epc = Input(UInt(nDataBit.W))
     val i_tl1epc = Input(UInt(nDataBit.W))
-//    val i_hf = Input(new DomeCfgBus(pDomeCfg))
 
     val o_val = Output(UInt(nDataBit.W))
   })
@@ -41,8 +40,6 @@ class SlctSource(nDataBit: Int) extends Module {
     is (OP.IN)      {io.o_val := io.i_in}
     is (OP.TL0EPC)  {io.o_val := io.i_tl0epc}
     is (OP.TL1EPC)  {io.o_val := io.i_tl1epc}
-//    is (OP.CONF)  {io.o_val := io.i_hf}
-//    is (OP.INDEX) {io.o_val := io.i_hf}
   }
 }
 
@@ -52,7 +49,7 @@ class RrStage(p: HfuParams) extends Module {
 
     val b_req = Flipped(new HfuReqIO(p, p.nAddrBit, p.nDataBit))
 
-    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pDomeCfg))
+    val i_state = Input(new RegFileStateBus(p.nChampReg, p.pFieldStruct))
     val i_etl = Input(Vec(p.nChampTrapLvl, new HfuTrapBus(p.nAddrBit)))
     val b_hfs = Vec(2, Flipped(new RegFileReadIO(p)))
 

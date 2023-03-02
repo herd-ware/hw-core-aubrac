@@ -27,9 +27,9 @@ trait FrontParams extends GenParams {
   def pcBoot: String
   def nHart: Int
   
-  def useDome: Boolean
-  def nDome: Int
-  def multiDome: Boolean = false
+  def useField: Boolean
+  def nField: Int
+  def multiField: Boolean = false
   def nPart: Int
 
   def nAddrBit: Int
@@ -46,9 +46,9 @@ trait FrontParams extends GenParams {
     useAmo = false,
     nDataByte = 4 * nFetchInstr,
     
-    useDome = useDome,
-    nDome = nDome,
-    multiDome = false
+    useField = useField,
+    nField = nField,
+    multiField = false
   )
 
   def useIMemSeq: Boolean
@@ -65,8 +65,8 @@ case class FrontConfig (
   debug: Boolean,
   pcBoot: String,
   nHart: Int,
-  useDome: Boolean,
-  nDome: Int,
+  useField: Boolean,
+  nField: Int,
   nPart: Int,
 
   nAddrBit: Int,

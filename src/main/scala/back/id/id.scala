@@ -1,10 +1,10 @@
 /*
- * File: id.scala
+ * File: id.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:36:53 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-02 12:21:43 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.riscv._
 import herd.core.aubrac.common._
 import herd.core.aubrac.back.csr.{CsrDecoderBus}
@@ -99,7 +99,7 @@ class SlctSize(nDataBit: Int) extends Module {
 
 class IdStage(p: BackParams) extends Module {
   val io = IO(new Bundle {
-    val b_back = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
     
     val i_flush = Input(Bool())
     val o_flush = Output(Bool())
@@ -130,7 +130,7 @@ class IdStage(p: BackParams) extends Module {
   val w_back_valid = Wire(Bool())
   val w_back_flush = Wire(Bool())
 
-  if (p.useDome) {
+  if (p.useField) {
     w_back_valid := io.b_back.get.valid & ~io.b_back.get.flush
     w_back_flush := io.b_back.get.flush | io.i_flush
   } else {
@@ -272,7 +272,7 @@ class IdStage(p: BackParams) extends Module {
   w_wait := io.i_end | w_rs_wait | w_empty_wait
   w_lock := ~m_out.io.b_in.ready
 
-  if (p.useDome) {
+  if (p.useField) {
     m_out.io.i_flush := io.b_back.get.flush
   } else {
     m_out.io.i_flush := false.B
@@ -317,9 +317,9 @@ class IdStage(p: BackParams) extends Module {
   io.o_stop := io.b_in.valid & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
 
   // ******************************
-  //             DOME
+  //             FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_back.get.free := ~m_out.io.o_val.valid
   }  
 

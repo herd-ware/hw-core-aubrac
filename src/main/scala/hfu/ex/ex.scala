@@ -29,7 +29,7 @@ class ExStage(p: HfuParams) extends Module {
 
     val b_in = Flipped(new GenRVIO(p, new ExStageBus(p), new DataBus(p)))
 
-    val i_exe = Input(new DomeCfgBus(p.pDomeCfg))
+    val i_exe = Input(new FieldStructBus(p.pFieldStruct))
     val o_byp = Output(new BypassBus(p))
 
     val b_out = new GenRVIO(p, new CtrlStageBus(p), new ResultBus(p))
@@ -43,7 +43,7 @@ class ExStage(p: HfuParams) extends Module {
   val w_hfres_lock = Wire(Bool())
   val w_end = Wire(Bool())
   val w_res = Wire(UInt(p.nDataBit.W))
-  val w_hfres = Wire(new DomeCfgBus(p.pDomeCfg))
+  val w_hfres = Wire(new FieldStructBus(p.pFieldStruct))
   val w_index = Wire(UInt(7.W))
   val w_check = Wire(Bool())
 

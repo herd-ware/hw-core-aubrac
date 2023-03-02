@@ -18,7 +18,7 @@ package herd.core.aubrac.nlp
 import chisel3._
 import chisel3.util._
 
-import herd.common.dome._
+import herd.common.field._
 
 
 class Bht(p: BhtParams) extends Module {
@@ -27,7 +27,7 @@ class Bht(p: BhtParams) extends Module {
   require(isPow2(p.nEntry), "BHT must have 2^n entries.")
   
   val io = IO(new Bundle {
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     val b_read = Vec(p.nReadPort, new BhtReadIO(p))
     val b_write = new BhtWriteIO(p)
@@ -41,7 +41,7 @@ class Bht(p: BhtParams) extends Module {
   // ******************************
   val w_flush = Wire(Bool())
 
-  if (p.useDome) w_flush := io.b_hart.get.flush else w_flush := false.B
+  if (p.useField) w_flush := io.b_hart.get.flush else w_flush := false.B
 
   // ******************************
   //              READ
@@ -112,9 +112,9 @@ class Bht(p: BhtParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_hart.get.free := ~r_valid.asUInt.orR
   }  
 }

@@ -51,7 +51,7 @@ object BackConfigBase extends BackConfig (
   nDataBit = 32,
   
   useChamp = true,
-  nDome = 1,
+  nField = 1,
   nPart = 1,
   nChampTrapLvl = 1,
 

@@ -48,8 +48,8 @@ trait PipelineParams extends NlpParams
   //            CHAMP
   // ------------------------------
   def useChamp: Boolean
-  override def multiDome: Boolean = false
-  def nDome: Int
+  override def multiField: Boolean = false
+  def nField: Int
   def nPart: Int
   def nChampTrapLvl: Int
 
@@ -97,7 +97,7 @@ case class PipelineConfig (
   nDataBit: Int, 
 
   useChamp: Boolean,
-  nDome: Int,
+  nField: Int,
   nPart: Int,
   nChampTrapLvl: Int,
 
@@ -140,9 +140,9 @@ trait L1Params extends HayParams {
   def pPrevBus: Array[Mb4sParams]
 
   // ------------------------------
-  //         DOME PARAMETERS
+  //        FIELD PARAMETERS
   // ------------------------------
-  def multiDome: Boolean = true
+  def multiField: Boolean = true
   def nPart: Int
 
   // ------------------------------
@@ -230,9 +230,9 @@ trait L2Params extends HayParams {
   def pPrevBus: Array[Mb4sParams]
 
   // ------------------------------
-  //         DOME PARAMETERS
+  //        FIELD PARAMETERS
   // ------------------------------
-  def multiDome: Boolean = true
+  def multiField: Boolean = true
   def nPart: Int
 
   // ------------------------------
@@ -325,16 +325,16 @@ trait AubracParams extends PipelineParams {
   def useChampExtCst: Boolean
   def nChampTrapLvl: Int
   
-  def nDome: Int = {
-    var ndome: Int = 1
+  def nField: Int = {
+    var nfield: Int = 1
     if (useChampExtFr) {
-      ndome = ndome + 1
+      nfield = nfield + 1
     }
-    return ndome
+    return nfield
   }
-  override def multiDome: Boolean = false
+  override def multiField: Boolean = false
   def nPart: Int
-  def nDomeFlushCycle: Int
+  def nFieldFlushCycle: Int
 
   def pHfu: HfuParams = new HfuConfig (
     debug = debug,
@@ -351,7 +351,7 @@ trait AubracParams extends PipelineParams {
     nChampTrapLvl = nChampTrapLvl,
     
     nPart = nPart,
-    nDomeFlushCycle = nDomeFlushCycle
+    nFieldFlushCycle = nFieldFlushCycle
   )
     
   // ------------------------------
@@ -519,7 +519,7 @@ trait AubracParams extends PipelineParams {
     nBus = 0,
     
     debug = debug,  
-    multiDome = false,
+    multiField = false,
     nDepth = 2,
     useDirect = false
   )
@@ -674,7 +674,7 @@ trait AubracParams extends PipelineParams {
     nBus = 1,
     
     debug = debug,  
-    multiDome = true,
+    multiField = true,
     nDepth = 4,
     useDirect = false
   )
@@ -703,7 +703,7 @@ case class AubracConfig (
   nChampTrapLvl: Int,
   
   nPart: Int,
-  nDomeFlushCycle: Int,
+  nFieldFlushCycle: Int,
 
   // ------------------------------
   //           FRONT END

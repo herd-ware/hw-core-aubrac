@@ -23,8 +23,8 @@ import chisel3.util._
 //              BTB
 // ******************************   
 object BtbConfigBase extends BtbConfig (
-  useDome = true,
-  nDome = 2,
+  useField = true,
+  nField = 2,
 
   nReadPort = 2,
   nLine = 8,
@@ -36,8 +36,8 @@ object BtbConfigBase extends BtbConfig (
 //              BHT
 // ******************************
 object BhtConfigBase extends BhtConfig (
-  useDome = true,
-  nDome = 2,
+  useField = true,
+  nField = 2,
 
   nReadPort = 2,
   nSet = 2,
@@ -49,8 +49,8 @@ object BhtConfigBase extends BhtConfig (
 //              RSB
 // ******************************
 object RsbConfigBase extends RsbConfig (
-  useDome = true,
-  nDome = 2,
+  useField = true,
+  nField = 2,
 
   useSpec = true,
   nDepth = 16,
@@ -61,8 +61,8 @@ object RsbConfigBase extends RsbConfig (
 //              NLP
 // ******************************
 object NlpConfigBase extends NlpConfig (
-  useDome = true,
-  nDome = 2,
+  useField = true,
+  nField = 2,
 
   nAddrBit = 32,
   nInstrByte = 4,

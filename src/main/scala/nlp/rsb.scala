@@ -18,7 +18,7 @@ package herd.core.aubrac.nlp
 import chisel3._
 import chisel3.util._
 
-import herd.common.dome._
+import herd.common.field._
 
 
 class RsbReg(p: RsbParams) extends Bundle {
@@ -30,7 +30,7 @@ class RsbReg(p: RsbParams) extends Bundle {
 
 class Rsb(p: RsbParams) extends Module {
   val io = IO(new Bundle {
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     val i_restore = Input(Bool())
 
@@ -43,7 +43,7 @@ class Rsb(p: RsbParams) extends Module {
   // ******************************
   val w_flush = Wire(Bool())
 
-  if (p.useDome) w_flush := io.b_hart.get.flush else w_flush := false.B
+  if (p.useField) w_flush := io.b_hart.get.flush else w_flush := false.B
 
   // ******************************
   //             STACK
@@ -165,9 +165,9 @@ class Rsb(p: RsbParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     val w_free = Wire(Vec(2, Bool()))
     for (po <- 0 until 2) {
       w_free(po) := (r_rsb(po).pt === 0.U) & ~r_rsb(po).wmin & ~r_rsb(po).wmax

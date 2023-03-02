@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.isa.champ._
 import herd.common.mem.mb4s._
 
@@ -40,17 +40,17 @@ trait HfuParams extends GenParams  {
   def useChampExtCst: Boolean
   def nChampTrapLvl: Int
 
-  def useDome: Boolean = useChamp
-  def multiDome: Boolean = false
-  def nDome: Int = if (useChampExtFr) 2 else 1
+  def useField: Boolean = useChamp
+  def multiField: Boolean = false
+  def nField: Int = if (useChampExtFr) 2 else 1
   def nPart: Int
-  def nDomeFlushCycle: Int
-  def nDomeIndex: Int = 6
-  def nDomeBit: Int = nDomeIndex * nDataBit
+  def nFieldFlushCycle: Int
+  def nFieldIndex: Int = 6
+  def nFieldBit: Int = nFieldIndex * nDataBit
 
   def nBypass: Int = 2
 
-  def pDomeCfg: DomeCfgParams = new DomeCfgConfig (
+  def pFieldStruct: FieldStructParams = new FieldStructConfig (
     nDataBit = nDataBit,
     nTrapLvl = nChampTrapLvl,
     useRange = useChampExtR,
@@ -65,9 +65,9 @@ trait HfuParams extends GenParams  {
     useAmo = false,
     nDataByte = nDataByte,
     
-    useDome = useChamp,
-    nDome = nDome,
-    multiDome = false
+    useField = useChamp,
+    nField = nField,
+    multiField = false
   )
 }
 
@@ -85,5 +85,5 @@ case class HfuConfig (
   nChampTrapLvl: Int,
   
   nPart: Int,
-  nDomeFlushCycle: Int
+  nFieldFlushCycle: Int
 ) extends HfuParams

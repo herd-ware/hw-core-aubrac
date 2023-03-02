@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.gen._
-import herd.common.dome._
+import herd.common.field._
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.common._
@@ -31,8 +31,8 @@ import herd.io.core.clint.{ClintIO}
 
 class Back (p: BackParams) extends Module {
   val io = IO(new Bundle {
-    val b_dome = if (p.useDome) Some(Vec(p.nDome, new DomeIO(p.nAddrBit, p.nDataBit))) else None
-    val b_hart = if (p.useDome) Some(new RsrcIO(p.nHart, p.nDome, 1)) else None
+    val b_field = if (p.useField) Some(Vec(p.nField, new FieldIO(p.nAddrBit, p.nDataBit))) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
 
     val i_flush = Input(Bool())
     val o_flush = Output(Bool())
@@ -44,7 +44,7 @@ class Back (p: BackParams) extends Module {
     val o_br_info = Output(new BranchInfoBus(p.nInstrBit))
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
-    val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useDome, p.nDome, p.nAddrBit)) else None
+    val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useField, p.nField, p.nAddrBit)) else None
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
@@ -82,7 +82,7 @@ class Back (p: BackParams) extends Module {
   // ------------------------------
   //            MODULE
   // ------------------------------
-  if (p.useDome) m_fsm.io.b_hart.get <> io.b_hart.get
+  if (p.useField) m_fsm.io.b_hart.get <> io.b_hart.get
   m_fsm.io.i_stop := m_id.io.o_stop | m_mem.io.o_stop | m_wb.io.o_stop
   m_fsm.io.i_empty := w_empty
   m_fsm.io.i_br := m_ex.io.o_br_new.valid
@@ -115,7 +115,7 @@ class Back (p: BackParams) extends Module {
   // ------------------------------
   //            MODULE
   // ------------------------------
-  if (p.useDome) m_id.io.b_back.get <> io.b_hart.get
+  if (p.useField) m_id.io.b_back.get <> io.b_hart.get
   m_id.io.i_flush := m_fsm.io.o_trap.valid | io.i_flush | m_ex.io.o_flush | m_mem.io.o_flush
   m_id.io.b_in <> io.b_in
   m_id.io.b_in.valid := io.b_in.valid & ~m_fsm.io.o_lock
@@ -154,7 +154,7 @@ class Back (p: BackParams) extends Module {
   // ------------------------------
   //            MODULE
   // ------------------------------
-  if (p.useDome) m_ex.io.b_back.get <> io.b_hart.get
+  if (p.useField) m_ex.io.b_back.get <> io.b_hart.get
   if (p.useMemStage) {
     m_ex.io.i_flush := m_fsm.io.o_trap.valid | io.i_flush | m_mem.io.o_flush
   } else {
@@ -167,7 +167,7 @@ class Back (p: BackParams) extends Module {
   // ******************************
   //           MEM STAGE
   // ******************************
-  if (p.useDome) m_mem.io.b_back.get <> io.b_hart.get
+  if (p.useField) m_mem.io.b_back.get <> io.b_hart.get
   m_mem.io.i_flush := m_fsm.io.o_trap.valid | io.i_flush
   m_mem.io.b_in <> m_ex.io.b_out
   if (!p.useMemStage || (p.nExStage > 1)) {
@@ -179,8 +179,8 @@ class Back (p: BackParams) extends Module {
   // ******************************
   //              CSR
   // ******************************
-  if (p.useDome) {
-    m_csr.io.b_dome.get <> io.b_dome.get
+  if (p.useField) {
+    m_csr.io.b_field.get <> io.b_field.get
     m_csr.io.b_hart.get(0) <> io.b_hart.get
   }
   m_csr.io.b_read(0) <> m_mem.io.b_csr
@@ -197,7 +197,7 @@ class Back (p: BackParams) extends Module {
   // ******************************
   //            WB STAGE
   // ******************************
-  if (p.useDome) m_wb.io.b_back.get <> io.b_hart.get
+  if (p.useField) m_wb.io.b_back.get <> io.b_hart.get
   m_wb.io.i_flush := m_fsm.io.o_trap.valid | io.i_flush
   m_wb.io.b_in <> m_mem.io.b_out
   m_wb.io.b_dmem.read <> io.b_dmem.read
@@ -220,9 +220,9 @@ class Back (p: BackParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     io.b_hart.get.free := m_id.io.b_back.get.free & m_ex.io.b_back.get.free & m_mem.io.b_back.get.free & m_wb.io.b_back.get.free & m_fsm.io.b_hart.get.free
   }
 

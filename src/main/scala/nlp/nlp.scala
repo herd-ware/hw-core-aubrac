@@ -20,12 +20,12 @@ import chisel3.util._
 import scala.math._
 
 import herd.common.tools._
-import herd.common.dome._
+import herd.common.field._
 
 
 class Nlp (p: NlpParams) extends Module {
   val io = IO(new Bundle {
-    val b_hart = if (p.useDome) Some(new RsrcIO(1, p.nDome, 1)) else None
+    val b_hart = if (p.useField) Some(new RsrcIO(1, p.nField, 1)) else None
 
     val i_mispred = Input(Bool())
 
@@ -110,9 +110,9 @@ class Nlp (p: NlpParams) extends Module {
   }
 
   // ******************************
-  //             DOME
+  //            FIELD
   // ******************************
-  if (p.useDome) {
+  if (p.useField) {
     m_btb.io.b_hart.get <> io.b_hart.get
     m_bht.io.b_hart.get <> io.b_hart.get
     m_rsb.io.b_hart.get <> io.b_hart.get
