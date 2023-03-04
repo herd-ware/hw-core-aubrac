@@ -1,10 +1,10 @@
 /*
- * File: pipeline.scala                                                        *
+ * File: pipeline.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:48:47 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 07:58:31 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -19,7 +19,7 @@ import chisel3._
 import chisel3.util._
 
 import herd.common.field._
-import herd.common.isa.hpc.{HpcMemoryBus}
+import herd.common.core.{HpcPipelineBus}
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.nlp._
@@ -43,7 +43,8 @@ class Pipeline (p: PipelineParams) extends Module {
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
-    val i_hpc_mem = Input(new HpcMemoryBus())
+    val o_hpc = Output(new HpcPipelineBus())
+    val i_hpm = Input(Vec(32, UInt(64.W)))
 
     val o_dbg = if (p.debug) Some(Output(new PipelineDbgBus(p))) else None
     val o_etd = if (p.debug) Some(Output(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit))) else None
@@ -94,7 +95,8 @@ class Pipeline (p: PipelineParams) extends Module {
   if (p.useCbo) m_back.io.b_cbo.get <> io.b_cbo.get
   if (p.useChamp) m_back.io.b_hfu.get <> io.b_hfu.get
 
-  m_back.io.i_hpc_mem := io.i_hpc_mem
+  io.o_hpc := m_back.io.o_hpc
+  m_back.io.i_hpm := io.i_hpm
   m_back.io.b_clint <> io.b_clint
 
   // ******************************

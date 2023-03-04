@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:34:24 pm
+ * Last Modified: 2023-03-02 11:41:53 pm
  * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -469,6 +469,8 @@ trait AubracParams extends PipelineParams {
   def nIOAddrBase: String
   def nScratch: Int
   def nCTimer: Int
+  def isHpmAct: Array[String]
+  def hasHpmMap: Array[String]
 
   def nUnCacheBase: String
   def nUnCacheByte: String
@@ -497,6 +499,7 @@ trait AubracParams extends PipelineParams {
     pPort           = Array(pL0DCrossBus)   ,
 
     debug           = debug           ,
+    nHart           = nHart           ,
     nAddrBit        = nAddrBit        ,
     nAddrBase       = nIOAddrBase     ,
 
@@ -504,7 +507,9 @@ trait AubracParams extends PipelineParams {
 
     useReqReg       = false           ,
     nScratch        = nScratch        ,
-    nCTimer         = nCTimer  
+    nCTimer         = nCTimer  ,
+    isHpmAct        = isHpmAct,
+    hasHpmMap       = hasHpmMap
   )
 
   def pL0DCross: Mb4sCrossbarParams = new Mb4sCrossbarConfig (
@@ -742,6 +747,8 @@ case class AubracConfig (
   nIOAddrBase: String,
   nScratch: Int,
   nCTimer: Int,
+  isHpmAct: Array[String],
+  hasHpmMap: Array[String],
 
   nUnCacheBase: String,
   nUnCacheByte: String,

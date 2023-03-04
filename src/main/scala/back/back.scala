@@ -1,10 +1,10 @@
 /*
- * File: back.scala                                                            *
+ * File: back.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:51:12 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 07:58:40 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -20,7 +20,7 @@ import chisel3.util._
 
 import herd.common.gen._
 import herd.common.field._
-import herd.common.isa.hpc.{HpcMemoryBus}
+import herd.common.core.{HpcPipelineBus}
 import herd.common.mem.mb4s._
 import herd.common.mem.cbo._
 import herd.core.aubrac.common._
@@ -49,7 +49,8 @@ class Back (p: BackParams) extends Module {
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
 
-    val i_hpc_mem = Input(new HpcMemoryBus())
+    val o_hpc = Output(new HpcPipelineBus())
+    val i_hpm = Input(Vec(32, UInt(64.W)))
 
     val o_dbg = if (p.debug) Some(Output(new BackDbgBus(p))) else None
     val o_etd = if (p.debug) Some(Output(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit))) else None
@@ -186,8 +187,7 @@ class Back (p: BackParams) extends Module {
   m_csr.io.b_read(0) <> m_mem.io.b_csr
   m_csr.io.b_write(0) <> m_wb.io.b_csr
 
-  m_csr.io.i_hpc_pipe(0) := m_wb.io.o_hpc
-  m_csr.io.i_hpc_mem(0) := io.i_hpc_mem
+  m_csr.io.i_hpm(0) := io.i_hpm
   
   m_csr.io.b_clint(0) <> io.b_clint
   m_csr.io.i_trap(0) := m_fsm.io.o_trap
@@ -227,6 +227,8 @@ class Back (p: BackParams) extends Module {
   // ******************************
   //              I/O
   // ******************************
+  io.o_hpc := m_wb.io.o_hpc
+
   // ------------------------------
   //             BRANCH
   // ------------------------------

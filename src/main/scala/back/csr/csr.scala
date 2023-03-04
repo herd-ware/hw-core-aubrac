@@ -1,10 +1,10 @@
 /*
- * File: csr.scala                                                             *
+ * File: csr.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:42:48 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 07:59:51 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -21,7 +21,6 @@ import scala.math._
 
 import herd.common.gen._
 import herd.common.field._
-import herd.common.isa.hpc.{HpcPipelineBus, HpcMemoryBus}
 import herd.core.aubrac.common._
 import herd.core.aubrac.hfu.{HfuReqCtrlBus, HfuReqDataBus, HfuCsrIO}
 import herd.io.core.clint.{ClintIO}
@@ -40,8 +39,7 @@ class Csr(p: CsrParams) extends Module {
     val b_trap = if (p.useChamp) Some(Vec(p.nHart, new GenRVIO(p, new HfuReqCtrlBus(p.debug, p.nAddrBit), new HfuReqDataBus(p.nDataBit)))) else None
     val o_br_trap = Output(Vec(p.nHart, new BranchBus(p.nAddrBit)))
 
-    val i_hpc_pipe = Input(Vec(p.nHart, new HpcPipelineBus()))
-    val i_hpc_mem = Input(Vec(p.nHart, new HpcMemoryBus()))
+    val i_hpm = Input(Vec(p.nHart, Vec(32, UInt(64.W))))
     
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
     val b_hfu = if (p.useChamp) Some(Vec(p.nHart, Flipped(new HfuCsrIO(p.nAddrBit, p.nChampTrapLvl)))) else None
@@ -63,9 +61,8 @@ class Csr(p: CsrParams) extends Module {
     io.o_ie := m_csr.io.o_ie
     io.o_br_trap := m_csr.io.o_br_trap
     io.b_trap.get <> m_csr.io.b_trap
-
-    m_csr.io.i_hpc_pipe := io.i_hpc_pipe
-    m_csr.io.i_hpc_mem := io.i_hpc_mem
+    
+    m_csr.io.i_hpm := io.i_hpm
 
     io.o_decoder := m_csr.io.o_decoder
     m_csr.io.b_hfu <> io.b_hfu.get
@@ -82,8 +79,7 @@ class Csr(p: CsrParams) extends Module {
     io.o_ie := m_csr.io.o_ie
     io.o_br_trap := m_csr.io.o_br_trap
 
-    m_csr.io.i_hpc_pipe := io.i_hpc_pipe
-    m_csr.io.i_hpc_mem := io.i_hpc_mem
+    m_csr.io.i_hpm := io.i_hpm
 
     io.o_decoder := m_csr.io.o_decoder
     m_csr.io.b_clint <> io.b_clint

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 09:44:51 am
+ * Last Modified: 2023-03-02 11:36:23 pm
  * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -133,6 +133,8 @@ object AubracConfigBase extends AubracConfig (
   nIOAddrBase = "00100000",
   nScratch = 2,
   nCTimer = 2,
+  isHpmAct = Array("ALL"),
+  hasHpmMap = Array(),
 
   nUnCacheBase = "70000000",
   nUnCacheByte = "01000000",

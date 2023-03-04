@@ -1,10 +1,10 @@
 /*
- * File: bus.scala                                                             *
+ * File: bus.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 07:26:22 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 08:00:07 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,7 +18,7 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.hpc.{HpcInstrBus}
+import herd.common.core.{HpcInstrBus}
 import herd.common.mem.mb4s.{OP => LSUUOP, AMO => LSUAMO}
 import herd.core.aubrac.front.{FrontBus}
 import herd.core.aubrac.back.csr.{UOP => CSRUOP, CsrBus}

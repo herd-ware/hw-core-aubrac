@@ -1,10 +1,10 @@
 /*
- * File: id.scala                                                              *
+ * File: id.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 07:19:44 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 08:25:08 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -156,13 +156,13 @@ class IdStage(p: BackParams) extends Module {
   // ******************************
   //             IMM
   // ******************************
-  val m_slct_imm1 = Module(new SlctImm(p.nInstrBit, p.nDataBit))
-  m_slct_imm1.io.i_instr := io.b_in.ctrl.get.instr
-  m_slct_imm1.io.i_imm_type := m_decoder.io.o_data.imm1type
+  val m_imm1 = Module(new SlctImm(p.nInstrBit, p.nDataBit))
+  m_imm1.io.i_instr := io.b_in.ctrl.get.instr
+  m_imm1.io.i_imm_type := m_decoder.io.o_data.imm1type
 
-  val m_slct_imm2 = Module(new SlctImm(p.nInstrBit, p.nDataBit))
-  m_slct_imm2.io.i_instr := io.b_in.ctrl.get.instr
-  m_slct_imm2.io.i_imm_type := m_decoder.io.o_data.imm2type
+  val m_imm2 = Module(new SlctImm(p.nInstrBit, p.nDataBit))
+  m_imm2.io.i_instr := io.b_in.ctrl.get.instr
+  m_imm2.io.i_imm_type := m_decoder.io.o_data.imm2type
 
   // ******************************
   //             SOURCE
@@ -173,8 +173,8 @@ class IdStage(p: BackParams) extends Module {
   val m_s1_src = Module(new SlctSource(p.nInstrBit, p.nDataBit, true))
   m_s1_src.io.i_src_type := m_decoder.io.o_data.s1type
   m_s1_src.io.i_rs.get := io.b_rs(0).data
-  m_s1_src.io.i_imm1 := m_slct_imm1.io.o_val
-  m_s1_src.io.i_imm2 := m_slct_imm2.io.o_val
+  m_s1_src.io.i_imm1 := m_imm1.io.o_val
+  m_s1_src.io.i_imm2 := m_imm2.io.o_val
   m_s1_src.io.i_pc := io.b_in.ctrl.get.pc
   m_s1_src.io.i_instr := io.b_in.ctrl.get.instr
 
@@ -189,8 +189,8 @@ class IdStage(p: BackParams) extends Module {
   val m_s2_src = Module(new SlctSource(p.nInstrBit, p.nDataBit, true))
   m_s2_src.io.i_src_type := m_decoder.io.o_data.s2type
   m_s2_src.io.i_rs.get := io.b_rs(1).data
-  m_s2_src.io.i_imm1 := m_slct_imm1.io.o_val
-  m_s2_src.io.i_imm2 := m_slct_imm2.io.o_val
+  m_s2_src.io.i_imm1 := m_imm1.io.o_val
+  m_s2_src.io.i_imm2 := m_imm2.io.o_val
   m_s2_src.io.i_pc := io.b_in.ctrl.get.pc
   m_s2_src.io.i_instr := io.b_in.ctrl.get.instr
 
@@ -205,8 +205,8 @@ class IdStage(p: BackParams) extends Module {
   val m_s3_src = Module(new SlctSource(p.nInstrBit, p.nDataBit, true))
   m_s3_src.io.i_src_type := m_decoder.io.o_data.s3type
   m_s3_src.io.i_rs.get := io.b_rs(1).data
-  m_s3_src.io.i_imm1 := m_slct_imm1.io.o_val
-  m_s3_src.io.i_imm2 := m_slct_imm2.io.o_val
+  m_s3_src.io.i_imm1 := m_imm1.io.o_val
+  m_s3_src.io.i_imm2 := m_imm2.io.o_val
   m_s3_src.io.i_pc := io.b_in.ctrl.get.pc
   m_s3_src.io.i_instr := io.b_in.ctrl.get.instr
 
@@ -295,6 +295,7 @@ class IdStage(p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.hpc.st := m_decoder.io.o_lsu.st
   m_out.io.b_in.ctrl.get.hpc.br := (m_decoder.io.o_int.unit === INTUNIT.BRU)
   m_out.io.b_in.ctrl.get.hpc.mispred := false.B
+  m_out.io.b_in.ctrl.get.hpc.rdcycle := m_decoder.io.o_csr.read & (m_imm2.io.o_val(11, 0) === CSR.CYCLE.U) 
 
   m_out.io.b_in.data.get.s1 := m_s1_size.io.o_val
   m_out.io.b_in.data.get.s2 := m_s2_size.io.o_val

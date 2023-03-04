@@ -1,10 +1,10 @@
 /*
- * File: champ.scala                                                           *
+ * File: champ.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:44:05 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-02 11:24:15 pm
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -21,16 +21,15 @@ import scala.math._
 
 import herd.common.gen._
 import herd.common.field._
-import herd.common.isa.hpc.{HpcPipelineBus, HpcMemoryBus}
 import herd.core.aubrac.common._
 import herd.core.aubrac.hfu.{HfuReqCtrlBus, HfuReqDataBus, HfuCsrIO}
 import herd.core.aubrac.hfu.{CODE => HFUCODE, OP => HFUOP}
 import herd.io.core.clint.{ClintIO}
 
 import herd.common.isa.riscv.{CBIE}
+import herd.common.isa.riscv.CSR._
 import herd.common.isa.champ._
 import herd.common.isa.champ.CSR._
-import herd.common.isa.hpc.CSR._
 import herd.common.isa.custom.CSR._
 
 
@@ -49,8 +48,7 @@ class Champ(p: CsrParams) extends Module {
     val b_trap = Vec(p.nHart, new GenRVIO(p, new HfuReqCtrlBus(p.debug, p.nAddrBit), new HfuReqDataBus(p.nDataBit)))
     val o_br_trap = Output(Vec(p.nHart, new BranchBus(p.nAddrBit)))
 
-    val i_hpc_pipe = Input(Vec(p.nHart, new HpcPipelineBus()))
-    val i_hpc_mem = Input(Vec(p.nHart, new HpcMemoryBus()))
+    val i_hpm = Input(Vec(p.nHart, Vec(32, UInt(64.W))))
 
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
     val b_hfu = Vec(p.nHart, Flipped(new HfuCsrIO(p.nAddrBit, p.nChampTrapLvl)))
@@ -100,38 +98,9 @@ class Champ(p: CsrParams) extends Module {
     init_csr(h).champ.get.tl1ip       := DontCare 
 
     init_csr(h).champ.get.envcfg      := DontCare 
-
-    init_csr(h).hpc.cycle             := 0.U
-    init_csr(h).hpc.time              := 0.U
-    init_csr(h).hpc.instret           := 0.U
-    init_csr(h).hpc.alu               := 0.U
-    init_csr(h).hpc.ld                := 0.U
-    init_csr(h).hpc.st                := 0.U
-    init_csr(h).hpc.br                := 0.U
-    init_csr(h).hpc.mispred           := 0.U
-    init_csr(h).hpc.l1imiss           := 0.U
-    init_csr(h).hpc.l1dmiss           := 0.U
-    init_csr(h).hpc.l2miss            := 0.U
   }
 
   val r_csr = RegInit(init_csr)
-
-  // ******************************
-  //             HPC
-  // ******************************
-  for (h <- 0 until p.nHart) {
-    r_csr(h).hpc.cycle    := r_csr(h).hpc.cycle + 1.U
-    r_csr(h).hpc.time     := r_csr(h).hpc.time + 1.U
-    r_csr(h).hpc.instret  := r_csr(h).hpc.instret + io.i_hpc_pipe(h).instret
-    r_csr(h).hpc.alu      := r_csr(h).hpc.alu + io.i_hpc_pipe(h).alu
-    r_csr(h).hpc.ld       := r_csr(h).hpc.ld + io.i_hpc_pipe(h).ld
-    r_csr(h).hpc.st       := r_csr(h).hpc.st + io.i_hpc_pipe(h).st
-    r_csr(h).hpc.br       := r_csr(h).hpc.br + io.i_hpc_pipe(h).br
-    r_csr(h).hpc.mispred  := r_csr(h).hpc.mispred + io.i_hpc_pipe(h).mispred
-    r_csr(h).hpc.l1imiss  := r_csr(h).hpc.l1imiss + io.i_hpc_mem(h).l1imiss
-    r_csr(h).hpc.l1dmiss  := r_csr(h).hpc.l1dmiss + io.i_hpc_mem(h).l1dmiss
-    r_csr(h).hpc.l2miss   := r_csr(h).hpc.l2miss + io.i_hpc_mem(h).l2miss
-  }
 
   // ******************************
   //             WRITE
@@ -364,28 +333,76 @@ class Champ(p: CsrParams) extends Module {
         is (HL0ID.U)          {io.b_read(h).data := r_csr(0).champ.get.hl0id}
         is (ENVCFG.U)         {io.b_read(h).data := r_csr(h).champ.get.envcfg((p.nDataBit - 1),0)}
 
-        is (CYCLE.U)          {io.b_read(h).data := r_csr(0).hpc.cycle((p.nDataBit - 1),0)}
-        is (TIME.U)           {io.b_read(h).data := r_csr(0).hpc.time((p.nDataBit - 1),0)}
-        is (INSTRET.U)        {io.b_read(h).data := r_csr(h).hpc.instret((p.nDataBit - 1),0)}
-        is (BR.U)             {io.b_read(h).data := r_csr(h).hpc.br((p.nDataBit - 1),0)}
-        is (MISPRED.U)        {io.b_read(h).data := r_csr(h).hpc.mispred((p.nDataBit - 1),0)}
-        is (L1IMISS.U)        {io.b_read(h).data := r_csr(h).hpc.l1imiss((p.nDataBit - 1),0)}
-        is (L1DMISS.U)        {io.b_read(h).data := r_csr(h).hpc.l1dmiss((p.nDataBit - 1),0)}
-        is (L2MISS.U)         {io.b_read(h).data := r_csr(h).hpc.l2miss((p.nDataBit - 1),0)}
+        is (CYCLE.U)          {io.b_read(h).data := io.i_hpm(h)(0)((p.nDataBit - 1),0)}
+        is (TIME.U)           {io.b_read(h).data := io.i_hpm(h)(1)((p.nDataBit - 1),0)}
+        is (INSTRET.U)        {io.b_read(h).data := io.i_hpm(h)(2)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER3.U)    {io.b_read(h).data := io.i_hpm(h)(3)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER4.U)    {io.b_read(h).data := io.i_hpm(h)(4)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER5.U)    {io.b_read(h).data := io.i_hpm(h)(5)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER6.U)    {io.b_read(h).data := io.i_hpm(h)(6)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER7.U)    {io.b_read(h).data := io.i_hpm(h)(7)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER8.U)    {io.b_read(h).data := io.i_hpm(h)(8)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER9.U)    {io.b_read(h).data := io.i_hpm(h)(9)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER10.U)   {io.b_read(h).data := io.i_hpm(h)(10)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER11.U)   {io.b_read(h).data := io.i_hpm(h)(11)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER12.U)   {io.b_read(h).data := io.i_hpm(h)(12)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER13.U)   {io.b_read(h).data := io.i_hpm(h)(13)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER14.U)   {io.b_read(h).data := io.i_hpm(h)(14)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER15.U)   {io.b_read(h).data := io.i_hpm(h)(15)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER16.U)   {io.b_read(h).data := io.i_hpm(h)(16)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER17.U)   {io.b_read(h).data := io.i_hpm(h)(17)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER18.U)   {io.b_read(h).data := io.i_hpm(h)(18)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER19.U)   {io.b_read(h).data := io.i_hpm(h)(19)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER20.U)   {io.b_read(h).data := io.i_hpm(h)(20)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER21.U)   {io.b_read(h).data := io.i_hpm(h)(21)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER22.U)   {io.b_read(h).data := io.i_hpm(h)(22)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER23.U)   {io.b_read(h).data := io.i_hpm(h)(23)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER24.U)   {io.b_read(h).data := io.i_hpm(h)(24)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER25.U)   {io.b_read(h).data := io.i_hpm(h)(25)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER26.U)   {io.b_read(h).data := io.i_hpm(h)(26)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER27.U)   {io.b_read(h).data := io.i_hpm(h)(27)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER28.U)   {io.b_read(h).data := io.i_hpm(h)(28)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER29.U)   {io.b_read(h).data := io.i_hpm(h)(29)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER30.U)   {io.b_read(h).data := io.i_hpm(h)(30)((p.nDataBit - 1),0)}
+        is (HPMCOUNTER31.U)   {io.b_read(h).data := io.i_hpm(h)(31)((p.nDataBit - 1),0)}
       }
 
       if (p.nDataBit == 32) {
         switch (io.b_read(h).addr) {
-          is (ENVCFG.U)     {io.b_read(h).data := r_csr(h).champ.get.envcfg(63, 32)}
-
-          is (CYCLEH.U)     {io.b_read(h).data := r_csr(0).hpc.cycle(63,32)}
-          is (TIMEH.U)      {io.b_read(h).data := r_csr(0).hpc.time(63,32)}
-          is (INSTRETH.U)   {io.b_read(h).data := r_csr(h).hpc.instret(63,32)}
-          is (BRH.U)        {io.b_read(h).data := r_csr(h).hpc.br(63,32)}
-          is (MISPREDH.U)   {io.b_read(h).data := r_csr(h).hpc.mispred(63,32)}
-          is (L1IMISSH.U)   {io.b_read(h).data := r_csr(h).hpc.l1imiss(63,32)}
-          is (L1DMISSH.U)   {io.b_read(h).data := r_csr(h).hpc.l1dmiss(63,32)}
-          is (L2MISSH.U)    {io.b_read(h).data := r_csr(h).hpc.l2miss(63,32)}
+          is (ENVCFG.U)         {io.b_read(h).data := r_csr(h).champ.get.envcfg(63, 32)}
+          
+          is (CYCLEH.U)         {io.b_read(h).data := io.i_hpm(h)(0)(63,32)}
+          is (TIMEH.U)          {io.b_read(h).data := io.i_hpm(h)(1)(63,32)}
+          is (INSTRETH.U)       {io.b_read(h).data := io.i_hpm(h)(2)(63,32)}
+          is (HPMCOUNTER3H.U)   {io.b_read(h).data := io.i_hpm(h)(3)(63,32)}
+          is (HPMCOUNTER4H.U)   {io.b_read(h).data := io.i_hpm(h)(4)(63,32)}
+          is (HPMCOUNTER5H.U)   {io.b_read(h).data := io.i_hpm(h)(5)(63,32)}
+          is (HPMCOUNTER6H.U)   {io.b_read(h).data := io.i_hpm(h)(6)(63,32)}
+          is (HPMCOUNTER7H.U)   {io.b_read(h).data := io.i_hpm(h)(7)(63,32)}
+          is (HPMCOUNTER8H.U)   {io.b_read(h).data := io.i_hpm(h)(8)(63,32)}
+          is (HPMCOUNTER9H.U)   {io.b_read(h).data := io.i_hpm(h)(9)(63,32)}
+          is (HPMCOUNTER10H.U)  {io.b_read(h).data := io.i_hpm(h)(10)(63,32)}
+          is (HPMCOUNTER11H.U)  {io.b_read(h).data := io.i_hpm(h)(11)(63,32)}
+          is (HPMCOUNTER12H.U)  {io.b_read(h).data := io.i_hpm(h)(12)(63,32)}
+          is (HPMCOUNTER13H.U)  {io.b_read(h).data := io.i_hpm(h)(13)(63,32)}
+          is (HPMCOUNTER14H.U)  {io.b_read(h).data := io.i_hpm(h)(14)(63,32)}
+          is (HPMCOUNTER15H.U)  {io.b_read(h).data := io.i_hpm(h)(15)(63,32)}
+          is (HPMCOUNTER16H.U)  {io.b_read(h).data := io.i_hpm(h)(16)(63,32)}
+          is (HPMCOUNTER17H.U)  {io.b_read(h).data := io.i_hpm(h)(17)(63,32)}
+          is (HPMCOUNTER18H.U)  {io.b_read(h).data := io.i_hpm(h)(18)(63,32)}
+          is (HPMCOUNTER19H.U)  {io.b_read(h).data := io.i_hpm(h)(19)(63,32)}
+          is (HPMCOUNTER20H.U)  {io.b_read(h).data := io.i_hpm(h)(20)(63,32)}
+          is (HPMCOUNTER21H.U)  {io.b_read(h).data := io.i_hpm(h)(21)(63,32)}
+          is (HPMCOUNTER22H.U)  {io.b_read(h).data := io.i_hpm(h)(22)(63,32)}
+          is (HPMCOUNTER23H.U)  {io.b_read(h).data := io.i_hpm(h)(23)(63,32)}
+          is (HPMCOUNTER24H.U)  {io.b_read(h).data := io.i_hpm(h)(24)(63,32)}
+          is (HPMCOUNTER25H.U)  {io.b_read(h).data := io.i_hpm(h)(25)(63,32)}
+          is (HPMCOUNTER26H.U)  {io.b_read(h).data := io.i_hpm(h)(26)(63,32)}
+          is (HPMCOUNTER27H.U)  {io.b_read(h).data := io.i_hpm(h)(27)(63,32)}
+          is (HPMCOUNTER28H.U)  {io.b_read(h).data := io.i_hpm(h)(28)(63,32)}
+          is (HPMCOUNTER29H.U)  {io.b_read(h).data := io.i_hpm(h)(29)(63,32)}
+          is (HPMCOUNTER30H.U)  {io.b_read(h).data := io.i_hpm(h)(30)(63,32)}
+          is (HPMCOUNTER31H.U)  {io.b_read(h).data := io.i_hpm(h)(31)(63,32)}
         }
       }
 
@@ -462,15 +479,41 @@ class Champ(p: CsrParams) extends Module {
     for (h <- 0 until p.nHart) {
       io.o_dbg.get(h) := r_csr(h)
 
-      io.o_dbg.get(h).riscv.cycle   := r_csr(0).hpc.cycle
-      io.o_dbg.get(h).riscv.time    := r_csr(0).hpc.time
-      io.o_dbg.get(h).riscv.instret := r_csr(h).hpc.instret
-      io.o_dbg.get(h).hpc.cycle     := r_csr(0).hpc.cycle
-      io.o_dbg.get(h).hpc.time      := r_csr(0).hpc.time
+      io.o_dbg.get(h).riscv.cycle := io.i_hpm(h)(0) 
+      io.o_dbg.get(h).riscv.time := io.i_hpm(h)(1) 
+      io.o_dbg.get(h).riscv.instret := io.i_hpm(h)(2) 
+      io.o_dbg.get(h).riscv.hpmcounter3 := io.i_hpm(h)(3)
+      io.o_dbg.get(h).riscv.hpmcounter4 := io.i_hpm(h)(4)
+      io.o_dbg.get(h).riscv.hpmcounter5 := io.i_hpm(h)(5)
+      io.o_dbg.get(h).riscv.hpmcounter6 := io.i_hpm(h)(6)
+      io.o_dbg.get(h).riscv.hpmcounter7 := io.i_hpm(h)(7)
+      io.o_dbg.get(h).riscv.hpmcounter8 := io.i_hpm(h)(8)
+      io.o_dbg.get(h).riscv.hpmcounter9 := io.i_hpm(h)(9)
+      io.o_dbg.get(h).riscv.hpmcounter10 := io.i_hpm(h)(10)
+      io.o_dbg.get(h).riscv.hpmcounter11 := io.i_hpm(h)(11)
+      io.o_dbg.get(h).riscv.hpmcounter13 := io.i_hpm(h)(12)
+      io.o_dbg.get(h).riscv.hpmcounter13 := io.i_hpm(h)(13)
+      io.o_dbg.get(h).riscv.hpmcounter14 := io.i_hpm(h)(14)
+      io.o_dbg.get(h).riscv.hpmcounter15 := io.i_hpm(h)(15)
+      io.o_dbg.get(h).riscv.hpmcounter16 := io.i_hpm(h)(16)
+      io.o_dbg.get(h).riscv.hpmcounter17 := io.i_hpm(h)(17)
+      io.o_dbg.get(h).riscv.hpmcounter18 := io.i_hpm(h)(18)
+      io.o_dbg.get(h).riscv.hpmcounter19 := io.i_hpm(h)(19)
+      io.o_dbg.get(h).riscv.hpmcounter20 := io.i_hpm(h)(20)
+      io.o_dbg.get(h).riscv.hpmcounter21 := io.i_hpm(h)(21)
+      io.o_dbg.get(h).riscv.hpmcounter23 := io.i_hpm(h)(22)
+      io.o_dbg.get(h).riscv.hpmcounter23 := io.i_hpm(h)(23)
+      io.o_dbg.get(h).riscv.hpmcounter24 := io.i_hpm(h)(24)
+      io.o_dbg.get(h).riscv.hpmcounter25 := io.i_hpm(h)(25)
+      io.o_dbg.get(h).riscv.hpmcounter26 := io.i_hpm(h)(26)
+      io.o_dbg.get(h).riscv.hpmcounter27 := io.i_hpm(h)(27)
+      io.o_dbg.get(h).riscv.hpmcounter28 := io.i_hpm(h)(28)
+      io.o_dbg.get(h).riscv.hpmcounter29 := io.i_hpm(h)(29)
+      io.o_dbg.get(h).riscv.hpmcounter30 := io.i_hpm(h)(30)
+      io.o_dbg.get(h).riscv.hpmcounter31 := io.i_hpm(h)(31)
+
       io.o_dbg.get(h).champ.get.chf := io.b_hfu(h).chf
       io.o_dbg.get(h).champ.get.phf := io.b_hfu(h).phf
-
-      dontTouch(r_csr(h).hpc)
     }    
 
     // ------------------------------

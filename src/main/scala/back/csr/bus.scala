@@ -1,10 +1,10 @@
 /*
- * File: bus.scala                                                             *
+ * File: bus.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:24:03 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 07:58:59 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -22,7 +22,6 @@ import scala.math._
 import herd.common.isa.riscv.{CsrBus => RiscvCsrBus}
 import herd.common.isa.priv.{CsrBus => PrivCsrBus}
 import herd.common.isa.champ.{CsrBus => ChampCsrBus}
-import herd.common.isa.hpc.{CsrBus => HpcCsrBus}
 import herd.common.isa.custom.{CsrBus => CustomCsrBus}
 import herd.core.aubrac.common._
 
@@ -32,7 +31,6 @@ import herd.core.aubrac.common._
 // ******************************
 class CsrBus(nDataBit: Int, useChamp: Boolean) extends Bundle {
   val riscv = new RiscvCsrBus()
-  val hpc = new HpcCsrBus()
   val priv = if (!useChamp) Some(new PrivCsrBus(nDataBit)) else None
   val champ = if (useChamp) Some(new ChampCsrBus(nDataBit)) else None
 }

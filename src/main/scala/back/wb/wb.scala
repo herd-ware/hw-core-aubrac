@@ -1,10 +1,10 @@
 /*
- * File: wb.scala                                                              *
+ * File: wb.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 07:28:01 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-03-03 08:00:52 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -21,7 +21,7 @@ import chisel3.util._
 import herd.common.gen._
 import herd.common.field._
 import herd.common.mem.mb4s._
-import herd.common.isa.hpc.{HpcPipelineBus}
+import herd.common.core.{HpcPipelineBus}
 import herd.common.isa.riscv._
 import herd.common.isa.priv.{EXC => PRIVEXC}
 import herd.common.isa.champ.{EXC => CHAMPEXC}
