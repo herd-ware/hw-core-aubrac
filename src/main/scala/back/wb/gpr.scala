@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:07:53 pm                                       *
+ * Last Modified: 2023-03-06 08:09:16 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -217,6 +217,7 @@ class Gpr(p : GprParams) extends Module {
         io.o_dbg.get(h)(i) := r_gpr(h)(i)
       }
     }
+    dontTouch(r_gpr)
 
     // ------------------------------
     //         DATA FOOTPRINT
