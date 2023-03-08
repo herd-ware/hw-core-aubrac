@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 07:22:35 pm                                       *
+ * Last Modified: 2023-03-08 09:35:30 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -427,7 +427,7 @@ class ExStage (p: BackParams) extends Module {
   // ------------------------------
   //          UNIT: BRU
   // ------------------------------
-  // CSR informations
+  // CSR information
   io.o_mispred := 0.U
 
   m_bru.io.b_port.ack.ready := w_ex1_flush

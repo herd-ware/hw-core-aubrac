@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 06:06:31 pm                                       *
+ * Last Modified: 2023-03-08 09:37:17 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -86,7 +86,7 @@ class If3Stage(p: FrontParams) extends Module {
       w_is_jal(fi) := (io.b_in.ctrl.get.instr(fi) === RISCV.JAL)
     }
 
-    // Current informations
+    // Current information
     val w_jal_valid = Wire(Vec(p.nFetchInstr, Bool()))
     val w_jal_inc = Wire(Vec(p.nFetchInstr, UInt(32.W)))
     val w_jal_addr = Wire(Vec(p.nFetchInstr, UInt(32.W))) 

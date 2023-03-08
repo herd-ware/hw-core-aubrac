@@ -1,10 +1,10 @@
 /*
- * File: table-64b.scala
+ * File: table-64b.scala                                                       *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:36:56 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-08 09:36:44 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -23,7 +23,7 @@ import herd.common.isa.riscv.{INSTR => RISCV}
 
 // ************************************************************
 //
-//  DECODE TABLES TO EXTRACT INFORMATIONS FOR 64-BIT DEDICATED
+//   DECODE TABLES TO EXTRACT INFORMATION FOR 64-BIT DEDICATED
 //
 // ************************************************************
 trait TABLE64B {

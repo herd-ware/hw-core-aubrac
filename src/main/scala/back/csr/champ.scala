@@ -1,10 +1,10 @@
 /*
- * File: champ.scala
+ * File: champ.scala                                                           *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 11:24:15 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-08 09:35:13 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -187,7 +187,7 @@ class Champ(p: CsrParams) extends Module {
   //             TRAP
   // ******************************
   // ------------------------------
-  //          INFORMATIONS
+  //          INFORMATION
   // ------------------------------
   val w_is_tl0handler = Wire(Vec(p.nHart, Bool()))
   val w_is_tl0deleg = Wire(Vec(p.nHart, Bool()))

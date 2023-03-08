@@ -1,10 +1,10 @@
 /*
- * File: table-lsu.scala
+ * File: table-lsu.scala                                                       *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:37:09 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-08 09:37:00 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -25,7 +25,7 @@ import herd.core.aubrac.back.csr.{UOP => CSRUOP}
 
 // ************************************************************
 //
-//        DECODE TABLES TO EXTRACT MEMORY INFORMATIONS
+//        DECODE TABLES TO EXTRACT MEMORY INFORMATION
 //
 // ************************************************************
 trait TABLELSU {

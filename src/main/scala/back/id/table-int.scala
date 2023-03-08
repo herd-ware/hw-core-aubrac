@@ -1,10 +1,10 @@
 /*
- * File: table-int.scala
+ * File: table-int.scala                                                       *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-28 10:37:06 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-08 09:36:55 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -25,7 +25,7 @@ import herd.common.isa.champ.{INSTR => CHAMP}
 
 // ************************************************************
 //
-//     DECODE TABLES TO EXTRACT GLOBAL AND EX INFORMATIONS
+//     DECODE TABLES TO EXTRACT GLOBAL AND EX INFORMATION
 //
 // ************************************************************
 trait TABLEINT
