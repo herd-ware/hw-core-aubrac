@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 02:30:34 pm
+ * Last Modified: 2023-03-21 04:50:02 pm
  * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -369,6 +369,7 @@ class Aubrac (p: AubracParams) extends Module {
     io.o_dbg.get.x := m_pipe.io.o_dbg.get.x
     io.o_dbg.get.csr := m_pipe.io.o_dbg.get.csr
     if (p.useChamp) io.o_dbg.get.hf.get := m_hfu.get.io.o_dbg.get
+    io.o_dbg.get.hpc := m_io.io.o_dbg.get.hpc(0)
 
     // ------------------------------
     //       EXECUTION TRACKER
