@@ -1,10 +1,10 @@
 /*
- * File: aubrac.scala
+ * File: aubrac.scala                                                          *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-21 04:50:02 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-03-22 02:31:34 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -357,6 +357,12 @@ class Aubrac (p: AubracParams) extends Module {
       m_hfu.get.io.b_pall.state(pa).free := w_pall_free(pa).asUInt.andR
     }
   }
+  
+  // ******************************
+  //             REPORT
+  // ******************************
+  m_l0dcross.report("CORE LEVEL 0 DATA")
+  if (p.useL1D || p.useL2) m_llcross.get.report("CORE LAST-LEVEL")
 
   // ******************************
   //             DEBUG
