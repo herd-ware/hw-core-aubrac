@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-08 09:35:30 am                                       *
+ * Last Modified: 2023-04-03 12:53:54 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -171,8 +171,8 @@ class ExStage (p: BackParams) extends Module {
   m_bru.io.b_port.req.ctrl.get := w_ex0.ctrl.get
   m_bru.io.b_port.req.data.get := w_ex0.data.get
   m_bru.io.i_br_next := io.i_br_next
-  m_bru.io.i_rs1_link := io.b_in.data.get.rs1_link
-  m_bru.io.i_rd_link := io.b_in.data.get.rd_link  
+  m_bru.io.i_call := io.b_in.ctrl.get.int.call  
+  m_bru.io.i_ret := io.b_in.ctrl.get.int.ret
 
   if (p.useCbo) m_bru.io.b_cbo.get <> io.b_cbo.get
 

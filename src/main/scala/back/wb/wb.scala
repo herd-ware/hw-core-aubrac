@@ -1,10 +1,10 @@
 /*
- * File: wb.scala
+ * File: wb.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 08:00:52 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-03 01:16:27 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -236,8 +236,18 @@ class WbStage (p: BackParams) extends Module {
       io.o_hpc.ld := 1.U
       io.o_hpc.st := m_sload.io.b_out.ctrl.get.hpc.st
     }.elsewhen(io.b_in.valid & ~w_is_sload) {
-      io.o_hpc := io.b_in.ctrl.get.hpc
       io.o_hpc.instret := 1.U
+      io.o_hpc.alu := io.b_in.ctrl.get.hpc.alu
+      io.o_hpc.bru := io.b_in.ctrl.get.hpc.bru
+      io.o_hpc.ld := io.b_in.ctrl.get.hpc.ld
+      io.o_hpc.mispred := io.b_in.ctrl.get.hpc.mispred
+      io.o_hpc.rdcycle := io.b_in.ctrl.get.hpc.rdcycle
+      io.o_hpc.st := io.b_in.ctrl.get.hpc.st
+      io.o_hpc.ret := io.b_in.ctrl.get.hpc.ret
+      io.o_hpc.call := io.b_in.ctrl.get.hpc.call
+      io.o_hpc.jal := io.b_in.ctrl.get.hpc.jal
+      io.o_hpc.jalr := io.b_in.ctrl.get.hpc.jalr
+      io.o_hpc.cflush := io.b_in.ctrl.get.hpc.cflush
     }
   }
 

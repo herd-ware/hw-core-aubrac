@@ -1,10 +1,10 @@
 /*
- * File: back.scala
+ * File: back.scala                                                            *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 07:58:40 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-03 01:22:48 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -228,6 +228,7 @@ class Back (p: BackParams) extends Module {
   //              I/O
   // ******************************
   io.o_hpc := m_wb.io.o_hpc
+  io.o_hpc.srcdep := m_id.io.o_hpc_srcdep
 
   // ------------------------------
   //             BRANCH

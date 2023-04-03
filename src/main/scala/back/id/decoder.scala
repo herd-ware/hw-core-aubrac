@@ -1,10 +1,10 @@
 /*
- * File: decoder.scala
+ * File: decoder.scala                                                         *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:30:59 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-03 12:54:28 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -18,7 +18,7 @@ package herd.core.aubrac.back
 import chisel3._
 import chisel3.util._
 
-import herd.common.isa.riscv.{INSTR => RISCV, CBIE}
+import herd.common.isa.riscv.{INSTR => RISCV, CBIE, REG}
 import herd.common.isa.priv.{INSTR => PRIV, EXC => PRIVEXC}
 import herd.common.isa.champ.{INSTR => CHAMP, EXC => CHAMPEXC}
 import herd.core.aubrac.common._
@@ -155,6 +155,9 @@ class Decoder(p: DecoderParams) extends Module {
   io.o_int.ssign(0) := w_dec_int(8)
   io.o_int.ssign(1) := w_dec_int(9)
   io.o_int.ssign(2) := w_dec_int(10)
+  io.o_int.call := (io.i_instr(11, 7) === REG.X1.U) | (io.i_instr(11, 7) === REG.X5.U)
+  io.o_int.ret := (io.i_instr(19,15) === REG.X1.U) | (io.i_instr(19,15) === REG.X5.U)
+
 
   if (p.nDataBit >= 64) {
     io.o_int.ssize(0) := w_dec_64b(0)

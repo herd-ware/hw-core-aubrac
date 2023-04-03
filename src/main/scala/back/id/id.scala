@@ -1,10 +1,10 @@
 /*
- * File: id.scala
+ * File: id.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 08:25:08 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-03 01:22:54 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -114,6 +114,8 @@ class IdStage(p: BackParams) extends Module {
     val i_pend = Input(Bool())
 
     val b_rs = Vec(2, Flipped(new GprReadIO(p)))
+
+    val o_hpc_srcdep = Output(Bool())
 
     val b_out = new GenRVIO(p, new ExCtrlBus(p), new DataBus(p.nDataBit))
   })
@@ -258,6 +260,10 @@ class IdStage(p: BackParams) extends Module {
   } else {
     io.o_flush := io.b_in.valid & ~w_flush & ~w_wait & ~w_lock & m_decoder.io.o_trap.valid
   }
+  // ******************************
+  //              HPC
+  // ******************************
+  io.o_hpc_srcdep := io.b_in.valid & w_rs_wait
 
   // ******************************
   //            OUTPUTS
@@ -293,15 +299,18 @@ class IdStage(p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.hpc.alu := (m_decoder.io.o_int.unit === INTUNIT.ALU)
   m_out.io.b_in.ctrl.get.hpc.ld := m_decoder.io.o_lsu.ld
   m_out.io.b_in.ctrl.get.hpc.st := m_decoder.io.o_lsu.st
-  m_out.io.b_in.ctrl.get.hpc.br := (m_decoder.io.o_int.unit === INTUNIT.BRU)
+  m_out.io.b_in.ctrl.get.hpc.bru := (m_decoder.io.o_int.unit === INTUNIT.BRU)
   m_out.io.b_in.ctrl.get.hpc.mispred := false.B
   m_out.io.b_in.ctrl.get.hpc.rdcycle := m_decoder.io.o_csr.read & (m_imm2.io.o_val(11, 0) === CSR.CYCLE.U) 
+  m_out.io.b_in.ctrl.get.hpc.jal := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JAL)
+  m_out.io.b_in.ctrl.get.hpc.jalr := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JALR)
+  m_out.io.b_in.ctrl.get.hpc.cflush := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.FLUSH)
+  m_out.io.b_in.ctrl.get.hpc.call := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JALR) & m_decoder.io.o_int.call
+  m_out.io.b_in.ctrl.get.hpc.ret := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JALR) & m_decoder.io.o_int.ret
 
   m_out.io.b_in.data.get.s1 := m_s1_size.io.o_val
   m_out.io.b_in.data.get.s2 := m_s2_size.io.o_val
   m_out.io.b_in.data.get.s3 := m_s3_size.io.o_val  
-  m_out.io.b_in.data.get.rs1_link := (m_decoder.io.o_data.rs1 === REG.X1.U) | (m_decoder.io.o_data.rs1 === REG.X5.U)
-  m_out.io.b_in.data.get.rd_link := (m_decoder.io.o_gpr.addr === REG.X1.U) | (m_decoder.io.o_gpr.addr === REG.X5.U)
 
   io.b_out <> m_out.io.b_out
 
@@ -333,6 +342,10 @@ class IdStage(p: BackParams) extends Module {
   //            DEBUG
   // ******************************
   if (p.debug) {
+    // ------------------------------
+    //            SIGNALS
+    // ------------------------------
+
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------
