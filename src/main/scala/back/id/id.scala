@@ -1,10 +1,10 @@
 /*
- * File: id.scala                                                              *
+ * File: id.scala
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-04-03 01:22:54 pm                                       *
- * Modified By: Mathieu Escouteloup                                            *
+ * Last Modified: 2023-04-05 10:30:48 am
+ * Modified By: Mathieu Escouteloup
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -223,24 +223,17 @@ class IdStage(p: BackParams) extends Module {
   // ------------------------------
   //              GPR
   // ------------------------------
-  val w_rs_wait = Wire(Bool())
-  when (io.b_in.valid & m_decoder.io.o_data.s1type === OP.XREG & ~io.b_rs(0).ready) {w_rs_wait := true.B}
-  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s2type === OP.XREG & ~io.b_rs(1).ready) {w_rs_wait := true.B}
-  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s3type === OP.XREG & ~io.b_rs(1).ready) {w_rs_wait := true.B}
-  .otherwise {w_rs_wait := false.B}
+  val w_wait_rs = Wire(Bool())
+  when (io.b_in.valid & m_decoder.io.o_data.s1type === OP.XREG & ~io.b_rs(0).ready) {w_wait_rs := true.B}
+  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s2type === OP.XREG & ~io.b_rs(1).ready) {w_wait_rs := true.B}
+  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s3type === OP.XREG & ~io.b_rs(1).ready) {w_wait_rs := true.B}
+  .otherwise {w_wait_rs := false.B}
 
   // ******************************
   //       WAIT EMPTY PIPELINE
   // ******************************
-  val w_empty_wait = Wire(Bool())
-  w_empty_wait := io.b_in.valid & m_decoder.io.o_info.empty & io.i_pend
-
-  // ******************************
-  //             TRAP
-  // ******************************
-  val w_trap = Wire(new TrapBus(p.nAddrBit, p.nDataBit))
-
-  w_trap := m_decoder.io.o_trap
+  val w_wait_empty = Wire(Bool())
+  w_wait_empty := io.b_in.valid & m_decoder.io.o_info.empty & io.i_pend
 
   // ******************************
   //            FLUSH
@@ -260,20 +253,21 @@ class IdStage(p: BackParams) extends Module {
   } else {
     io.o_flush := io.b_in.valid & ~w_flush & ~w_wait & ~w_lock & m_decoder.io.o_trap.valid
   }
+  
   // ******************************
   //              HPC
   // ******************************
-  io.o_hpc_srcdep := io.b_in.valid & w_rs_wait
+  io.o_hpc_srcdep := io.b_in.valid & w_wait_rs
 
   // ******************************
   //            OUTPUTS
   // ******************************
   // ------------------------------
-  //             BUS
+  //              BUS
   // ------------------------------
   val m_out = Module(new GenReg(p, new ExCtrlBus(p), new DataBus(p.nDataBit), false, false, true))
 
-  w_wait := io.i_end | w_rs_wait | w_empty_wait
+  w_wait := io.i_end | w_wait_rs | w_wait_empty
   w_lock := ~m_out.io.b_in.ready
 
   if (p.useField) {
@@ -322,14 +316,14 @@ class IdStage(p: BackParams) extends Module {
   // ******************************
   //             STAGE
   // ******************************  
+  io.o_stop := io.b_in.valid & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
+
   io.o_stage.valid := io.b_in.valid
   io.o_stage.hart := io.b_in.ctrl.get.hart
   io.o_stage.pc := io.b_in.ctrl.get.pc
   io.o_stage.instr := io.b_in.ctrl.get.instr
   io.o_stage.exc_gen := m_decoder.io.o_trap.gen
   io.o_stage.end := io.b_in.valid & m_decoder.io.o_info.end
-
-  io.o_stop := io.b_in.valid & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
 
   // ******************************
   //             FIELD
