@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 07:23:27 pm                                       *
+ * Last Modified: 2023-04-11 04:34:07 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -33,12 +33,12 @@ class MemStage (p: BackParams) extends Module {
     val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
 
     val i_flush = Input(Bool())
-    val o_flush = Output(Bool())
-    
-    val o_stop = Output(Bool())
-    val o_stage = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))
+    val o_flush = Output(Bool())    
 
     val b_in = Flipped(new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit)))
+
+    val o_stop = Output(Bool())
+    val o_stage = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))
 
     val b_csr = Flipped(new CsrReadIO(p.nDataBit))
     val b_dmem = if (p.useMemStage && (p.nExStage == 1)) Some(new Mb4sReqIO(p.pL0DBus)) else None

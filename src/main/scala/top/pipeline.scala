@@ -1,10 +1,10 @@
 /*
- * File: pipeline.scala
+ * File: pipeline.scala                                                        *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 07:58:31 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-12 10:02:07 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -86,6 +86,7 @@ class Pipeline (p: PipelineParams) extends Module {
     m_back.io.i_flush := false.B
   }
   m_back.io.i_br_next := m_front.io.o_br_next
+  
   m_back.io.b_in.valid := m_front.io.b_out(0).valid
   m_back.io.b_in.ctrl.get.hart := 0.U
   m_back.io.b_in.ctrl.get.pc := m_front.io.b_out(0).ctrl.get.pc

@@ -1,10 +1,10 @@
 /*
- * File: id.scala
+ * File: id.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-04-05 10:30:48 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-11 12:19:12 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -102,18 +102,17 @@ class IdStage(p: BackParams) extends Module {
     val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
     
     val i_flush = Input(Bool())
-    val o_flush = Output(Bool())
-
-    val i_csr = Input(new CsrDecoderBus())
-    val o_stop = Output(Bool())
-    val o_stage = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))    
+    val o_flush = Output(Bool()) 
 
     val b_in = Flipped(new GenRVIO(p, new BackPortBus(p.debug, p.nHart, p.nAddrBit, p.nInstrBit), UInt(0.W)))
+    
+    val b_rs = Vec(2, Flipped(new GprReadIO(p)))
 
+    val i_csr = Input(new CsrDecoderBus()) 
     val i_end = Input(Bool())
     val i_pend = Input(Bool())
-
-    val b_rs = Vec(2, Flipped(new GprReadIO(p)))
+    val o_stop = Output(Bool())
+    val o_stage = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))  
 
     val o_hpc_srcdep = Output(Bool())
 
@@ -220,10 +219,8 @@ class IdStage(p: BackParams) extends Module {
   // ******************************
   //          DEPENDENCIES
   // ******************************
-  // ------------------------------
-  //              GPR
-  // ------------------------------
   val w_wait_rs = Wire(Bool())
+  
   when (io.b_in.valid & m_decoder.io.o_data.s1type === OP.XREG & ~io.b_rs(0).ready) {w_wait_rs := true.B}
   .elsewhen (io.b_in.valid & m_decoder.io.o_data.s2type === OP.XREG & ~io.b_rs(1).ready) {w_wait_rs := true.B}
   .elsewhen (io.b_in.valid & m_decoder.io.o_data.s3type === OP.XREG & ~io.b_rs(1).ready) {w_wait_rs := true.B}
@@ -283,6 +280,12 @@ class IdStage(p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.trap := m_decoder.io.o_trap
 
   m_out.io.b_in.ctrl.get.int := m_decoder.io.o_int
+  if (p.useExtB) {
+    switch (m_decoder.io.o_int.unit) {
+      is (INTUNIT.BALU)   {m_out.io.b_in.ctrl.get.int.unit := INTUNIT.ALU}
+      is (INTUNIT.CLMUL)  {m_out.io.b_in.ctrl.get.int.unit := INTUNIT.MULDIV}
+    }
+  }
   m_out.io.b_in.ctrl.get.lsu := m_decoder.io.o_lsu
   m_out.io.b_in.ctrl.get.csr := m_decoder.io.o_csr
   m_out.io.b_in.ctrl.get.gpr := m_decoder.io.o_gpr

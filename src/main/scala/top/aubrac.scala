@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-22 02:31:34 pm                                       *
+ * Last Modified: 2023-04-12 10:05:57 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -326,7 +326,7 @@ class Aubrac (p: AubracParams) extends Module {
     // ------------------------------
 
     // ------------------------------
-    //    EXECUTEDFIELD PART STATE
+    //   EXECUTED FIELD PART STATE
     // ------------------------------
     for (pa <- 0 until p.nPart) {
       m_hfu.get.io.b_pexe.state(pa).free := true.B

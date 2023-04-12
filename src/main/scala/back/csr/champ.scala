@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-08 09:35:13 am                                       *
+ * Last Modified: 2023-04-12 08:49:56 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -195,8 +195,13 @@ class Champ(p: CsrParams) extends Module {
 
   for (h <- 0 until p.nHart) {
     w_is_tl0handler(h) := io.b_field(io.b_hart(h).field).tl(0) & (r_csr(h).champ.get.tl0thf === io.b_hfu(h).chf)
-    if (p.nChampTrapLvl > 1) w_is_tl1handler(h) := (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf) else w_is_tl1handler(h) := false.B
-    w_is_tl0deleg(h) := (io.i_trap(h).cause(p.nDataBit - 2, 5) === 0.U) & r_csr(h).champ.get.tl0edeleg(io.i_trap(h).cause(4, 0)) & (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf)
+    if (p.nChampTrapLvl > 1) {
+      w_is_tl1handler(h) := (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf)
+      w_is_tl0deleg(h) := (io.i_trap(h).cause(p.nDataBit - 2, 5) === 0.U) & r_csr(h).champ.get.tl0edeleg(io.i_trap(h).cause(4, 0)) & (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf)
+    } else {
+      w_is_tl1handler(h) := false.B
+      w_is_tl0deleg(h) := false.B
+    }    
   }
 
   // ------------------------------
@@ -225,7 +230,7 @@ class Champ(p: CsrParams) extends Module {
       io.b_hfu(h).etl(0).pc := r_csr(h).champ.get.tl0epc
     }
 
-    if (p.nChampTrapLvl > 0) {
+    if (p.nChampTrapLvl > 1) {
       io.b_hfu(h).etl(1).sw := r_csr(h).champ.get.tl1ehf(p.nDataBit - 1)
       io.b_hfu(h).etl(1).hf := r_csr(h).champ.get.tl1ehf(4, 0)
       io.b_hfu(h).etl(1).pc := r_csr(h).champ.get.tl1epc
@@ -266,8 +271,10 @@ class Champ(p: CsrParams) extends Module {
 
     when (io.i_trap(h).valid) {
       when (w_is_tl0deleg(h) & w_is_tl1handler(h)) {
-        io.o_br_trap(h).valid := true.B
-        io.o_br_trap(h).addr := r_csr(h).champ.get.tl1tvec
+        if (p.nChampTrapLvl > 1) {
+          io.o_br_trap(h).valid := true.B
+          io.o_br_trap(h).addr := r_csr(h).champ.get.tl1tvec
+        }        
       }.elsewhen (w_is_tl0handler(h)) {
         io.o_br_trap(h).valid := true.B
         io.o_br_trap(h).addr := r_csr(h).champ.get.tl0tvec          
@@ -278,9 +285,11 @@ class Champ(p: CsrParams) extends Module {
         io.b_trap(h).ctrl.get.op3 := HFUOP.X
         io.b_trap(h).ctrl.get.wb := false.B
         when (w_is_tl0deleg(h)) {
-          r_atl(h)(1) := true.B
-          io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl1thf
-          io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tl1tvec
+          if (p.nChampTrapLvl > 1) {
+            r_atl(h)(1) := true.B
+            io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl1thf
+            io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tl1tvec
+          }          
         }.otherwise {
           r_atl(h)(0) := true.B
           io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl0thf

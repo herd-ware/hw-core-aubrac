@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-04-03 12:53:54 pm                                       *
+ * Last Modified: 2023-04-11 04:00:07 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -38,11 +38,11 @@ class ExStage (p: BackParams) extends Module {
     
     val i_flush = Input(Bool())
     val o_flush = Output(Bool())
+
+    val b_in = Flipped(new GenRVIO(p, new ExCtrlBus(p), new DataBus(p.nDataBit)))
     
     val o_stop = Output(Bool())
     val o_stage = Output(Vec(p.nExStage, new StageBus(p.nHart, p.nAddrBit, p.nInstrBit)))
-
-    val b_in = Flipped(new GenRVIO(p, new ExCtrlBus(p), new DataBus(p.nDataBit)))
 
     val i_br_next = Input(new BranchBus(p.nAddrBit))
 
@@ -53,7 +53,6 @@ class ExStage (p: BackParams) extends Module {
     val o_byp = Output(Vec(p.nExStage, new BypassBus(p.nHart, p.nDataBit)))
     val o_br_new = Output(new BranchBus(p.nAddrBit))
     val o_br_info = Output(new BranchInfoBus(p.nAddrBit))
-    val o_mispred = Output(UInt(p.nDataBit.W))
 
     val b_out = new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit))
   })
@@ -82,8 +81,8 @@ class ExStage (p: BackParams) extends Module {
   
   val w_ex0_flush = Wire(Bool())
   val w_ex0_wait = Wire(Bool())
-  val w_ex0_unit_wait = Wire(Bool())
-  val w_ex0_mem_wait = Wire(Bool())
+  val w_ex0_wait_unit = Wire(Bool())
+  val w_ex0_wait_mem = Wire(Bool())
   val w_ex0_lock = Wire(Bool())
   val w_ex0_trap = Wire(new TrapBus(p.nAddrBit, p.nDataBit))
 
@@ -98,14 +97,14 @@ class ExStage (p: BackParams) extends Module {
 
   val w_ex1_flush = Wire(Bool())
   val w_ex1_wait = Wire(Bool())
-  val w_ex1_unit_wait = Wire(Bool())
+  val w_ex1_wait_unit = Wire(Bool())
   val w_ex1_lock = Wire(Bool())
 
   // Flush register with branches
-  val r_pipe_flush = RegInit(false.B)
+  val r_flush_pipe = RegInit(false.B)
   
   val w_br_new = Wire(new BranchBus(p.nAddrBit))
-  val w_pipe_flush = Wire(Bool())
+  val w_flush_pipe = Wire(Bool())
 
   val m_ex1 = Module(new GenReg(p, new ExCtrlBus(p), new ResultBus(p.nDataBit), false, false, true))
   
@@ -116,7 +115,7 @@ class ExStage (p: BackParams) extends Module {
 
   val w_ex2_flush = Wire(Bool())
   val w_ex2_wait = Wire(Bool())
-  val w_ex2_unit_wait = Wire(Bool())
+  val w_ex2_wait_unit = Wire(Bool())
   val w_ex2_lock = Wire(Bool())
 
   val m_out = Module(new GenReg(p, new MemCtrlBus(p), new ResultBus(p.nDataBit), false, false, true))
@@ -127,7 +126,7 @@ class ExStage (p: BackParams) extends Module {
   // ------------------------------
   //         UNIT: DEFAULT
   // ------------------------------
-  w_ex0_unit_wait := false.B
+  w_ex0_wait_unit := false.B
 
   w_ex0.valid := io.b_in.valid & w_back_valid & ~w_ex0_flush
   w_ex0.ctrl.get.hart := io.b_in.ctrl.get.info.hart
@@ -153,11 +152,11 @@ class ExStage (p: BackParams) extends Module {
 
   if (p.nExStage > 1) {
     when (io.b_in.ctrl.get.int.unit === INTUNIT.ALU) {
-      w_ex0_unit_wait := ~m_alu.io.b_port.req.ready
+      w_ex0_wait_unit := ~m_alu.io.b_port.req.ready
     }
-    m_alu.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.ALU) & ~w_ex0_lock & ~w_ex0_mem_wait
+    m_alu.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.ALU) & ~w_ex0_lock & ~w_ex0_wait_mem
   } else {
-    w_ex0_unit_wait := false.B
+    w_ex0_wait_unit := false.B
     m_alu.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.ALU)
   }
 
@@ -178,11 +177,11 @@ class ExStage (p: BackParams) extends Module {
 
   if (p.nExStage > 1) {
     when(io.b_in.ctrl.get.int.unit === INTUNIT.BRU) {
-      w_ex0_unit_wait := ~m_bru.io.b_port.req.ready
+      w_ex0_wait_unit := ~m_bru.io.b_port.req.ready
     }
     m_bru.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.BRU) & ~w_ex0_lock
   } else {
-    w_ex0_unit_wait := false.B
+    w_ex0_wait_unit := false.B
     m_bru.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.BRU)
   }  
 
@@ -199,11 +198,11 @@ class ExStage (p: BackParams) extends Module {
 
     if (p.nExStage > 1) {
       when (io.b_in.ctrl.get.int.unit === INTUNIT.MULDIV) {
-        w_ex0_unit_wait := ~m_muldiv.get.io.b_port.req.ready 
+        w_ex0_wait_unit := ~m_muldiv.get.io.b_port.req.ready 
       }      
       m_muldiv.get.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.MULDIV) & ~w_ex0_lock
     } else {
-      w_ex0_unit_wait := false.B
+      w_ex0_wait_unit := false.B
       m_muldiv.get.io.b_port.req.valid := w_ex0.valid & (io.b_in.ctrl.get.int.unit === INTUNIT.MULDIV)
     }  
   }
@@ -213,10 +212,10 @@ class ExStage (p: BackParams) extends Module {
   // ------------------------------
   if (p.useChamp) {
     when (io.b_in.ctrl.get.ext.ext === EXT.HFU) {
-      w_ex0_unit_wait := ~io.b_hfu.get.ready
+      w_ex0_wait_unit := ~io.b_hfu.get.ready
     }
 
-    io.b_hfu.get.valid := w_ex0.valid & (io.b_in.ctrl.get.ext.ext === EXT.HFU) & ~w_ex0_lock & ~w_ex0_flush & ~w_pipe_flush
+    io.b_hfu.get.valid := w_ex0.valid & (io.b_in.ctrl.get.ext.ext === EXT.HFU) & ~w_ex0_lock & ~w_ex0_flush & ~w_flush_pipe
     io.b_hfu.get.ctrl.get.code := io.b_in.ctrl.get.ext.code
     io.b_hfu.get.ctrl.get.op1 := io.b_in.ctrl.get.ext.op1
     io.b_hfu.get.ctrl.get.op2 := io.b_in.ctrl.get.ext.op2
@@ -263,9 +262,9 @@ class ExStage (p: BackParams) extends Module {
 
       m_dmem.io.i_flush := io.i_flush
 
-      w_ex0_mem_wait := ~m_dmem.io.b_in.ready & io.b_in.ctrl.get.lsu.use
+      w_ex0_wait_mem := ~m_dmem.io.b_in.ready & io.b_in.ctrl.get.lsu.use
 
-      m_dmem.io.b_in.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.use & ~w_ex0_trap.valid & ~w_ex0_lock & ~w_ex0_flush & ~w_pipe_flush
+      m_dmem.io.b_in.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.use & ~w_ex0_trap.valid & ~w_ex0_lock & ~w_ex0_flush & ~w_flush_pipe
       m_dmem.io.b_in.ctrl.get.hart := 0.U
       m_dmem.io.b_in.ctrl.get.op := io.b_in.ctrl.get.lsu.uop
       m_dmem.io.b_in.ctrl.get.addr := m_alu.io.o_add
@@ -295,9 +294,9 @@ class ExStage (p: BackParams) extends Module {
       
     // No MemStage
     } else {
-      w_ex0_mem_wait := ~io.b_dmem.get.ready(0) & io.b_in.ctrl.get.lsu.use
+      w_ex0_wait_mem := ~io.b_dmem.get.ready(0) & io.b_in.ctrl.get.lsu.use
 
-      io.b_dmem.get.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.use & ~w_ex0_trap.valid & ~w_ex0_lock & ~w_ex0_flush & ~w_pipe_flush
+      io.b_dmem.get.valid := io.b_in.valid & io.b_in.ctrl.get.lsu.use & ~w_ex0_trap.valid & ~w_ex0_lock & ~w_ex0_flush & ~w_flush_pipe
       if (p.useField) io.b_dmem.get.field.get := io.b_back.get.field
       io.b_dmem.get.ctrl.hart := 0.U
       io.b_dmem.get.ctrl.op := io.b_in.ctrl.get.lsu.uop
@@ -322,7 +321,7 @@ class ExStage (p: BackParams) extends Module {
       }
     }
   } else {
-    w_ex0_mem_wait := false.B
+    w_ex0_wait_mem := false.B
   }
 
   // ------------------------------
@@ -335,10 +334,10 @@ class ExStage (p: BackParams) extends Module {
   }
 
   if (p.useBranchReg) {
-    w_ex0_flush := r_pipe_flush | w_back_flush
+    w_ex0_flush := r_flush_pipe | w_back_flush
   } else {
     if (p.nExStage > 1) {
-      w_ex0_flush := w_pipe_flush | w_back_flush
+      w_ex0_flush := w_flush_pipe | w_back_flush
     } else {
       w_ex0_flush := w_back_flush
     }
@@ -355,20 +354,20 @@ class ExStage (p: BackParams) extends Module {
   }
 
   // Wait
-  w_ex0_wait := w_ex0_mem_wait | w_ex0_unit_wait | w_ex0_lock  
+  w_ex0_wait := w_ex0_wait_mem | w_ex0_wait_unit | w_ex0_lock  
   
   // Update registers
   if (p.nExStage > 1) {
     m_ex0.io.i_flush := w_back_flush
 
-    m_ex0.io.b_in.valid := io.b_in.valid & ~(w_ex0_mem_wait | w_ex0_unit_wait | w_ex0_flush)
+    m_ex0.io.b_in.valid := io.b_in.valid & ~(w_ex0_wait_mem | w_ex0_wait_unit | w_ex0_flush)
     m_ex0.io.b_in.ctrl.get := io.b_in.ctrl.get
 
     m_ex0.io.b_in.data.get.s1 := io.b_in.data.get.s1
     m_ex0.io.b_in.data.get.s3 := io.b_in.data.get.s3
     m_ex0.io.b_in.data.get.res := DontCare
 
-    w_ex1_unit_wait := (m_ex0.io.b_out.ctrl.get.int.unit === INTUNIT.ALU) | (m_ex0.io.b_out.ctrl.get.int.unit === INTUNIT.BRU)
+    w_ex1_wait_unit := (m_ex0.io.b_out.ctrl.get.int.unit === INTUNIT.ALU) | (m_ex0.io.b_out.ctrl.get.int.unit === INTUNIT.BRU)
 
     if (p.nExStage > 2) {
       m_ex0.io.b_out.ready := ~w_ex1_wait | w_ex1_flush
@@ -386,9 +385,9 @@ class ExStage (p: BackParams) extends Module {
     m_ex0.io.b_in.valid := false.B
     m_ex0.io.b_out.ready := false.B
 
-    w_ex1_unit_wait := (io.b_in.ctrl.get.int.unit === INTUNIT.ALU) | (io.b_in.ctrl.get.int.unit === INTUNIT.BRU)
+    w_ex1_wait_unit := (io.b_in.ctrl.get.int.unit === INTUNIT.ALU) | (io.b_in.ctrl.get.int.unit === INTUNIT.BRU)
 
-    w_ex1.valid := io.b_in.valid & w_back_valid & ~(w_ex0_mem_wait | w_ex0_unit_wait | w_ex0_flush)
+    w_ex1.valid := io.b_in.valid & w_back_valid & ~(w_ex0_wait_mem | w_ex0_wait_unit | w_ex0_flush)
     w_ex1.ctrl.get := io.b_in.ctrl.get
 
     w_ex1.data.get.s1 := io.b_in.data.get.s1
@@ -406,7 +405,7 @@ class ExStage (p: BackParams) extends Module {
   // ------------------------------
   w_br_new := DontCare
   w_br_new.valid := false.B
-  w_pipe_flush := false.B
+  w_flush_pipe := false.B
 
   // ------------------------------
   //          UNIT: ALU
@@ -420,34 +419,31 @@ class ExStage (p: BackParams) extends Module {
       m_alu.io.b_port.ack.ready := w_ex1.valid & ~w_ex1_lock & ~w_ex2_wait
     }
 
-    w_ex1_unit_wait := ~m_alu.io.b_port.ack.valid
+    w_ex1_wait_unit := ~m_alu.io.b_port.ack.valid
     w_ex1.data.get.res := m_alu.io.b_port.ack.data.get
   }
 
   // ------------------------------
   //          UNIT: BRU
   // ------------------------------
-  // CSR information
-  io.o_mispred := 0.U
-
   m_bru.io.b_port.ack.ready := w_ex1_flush
 
   when (w_ex1.ctrl.get.int.unit === INTUNIT.BRU) {
-    w_ex1_unit_wait := ~m_bru.io.b_port.ack.valid
+    w_ex1_wait_unit := ~m_bru.io.b_port.ack.valid
 
     if (p.nExStage > 2) {
       m_bru.io.b_port.ack.ready := w_ex1.valid & ~w_ex1_lock
 
       w_br_new.valid := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid & ~w_ex1_flush & ~w_ex1_lock
-      w_pipe_flush := m_bru.io.b_port.ack.valid & m_bru.io.o_flush & ~w_ex1_flush & ~w_ex1_lock
+      w_flush_pipe := m_bru.io.b_port.ack.valid & m_bru.io.o_flush & ~w_ex1_flush & ~w_ex1_lock
     } else {
       m_bru.io.b_port.ack.ready := w_ex1.valid & ~w_ex1_lock & ~w_ex2_wait
       
       w_br_new.valid := m_bru.io.b_port.ack.valid & m_bru.io.o_br_new.valid & ~w_ex1_flush & ~w_ex2_lock
-      w_pipe_flush := m_bru.io.b_port.ack.valid & m_bru.io.o_flush & ~w_ex1_flush & ~w_ex2_lock
+      w_flush_pipe := m_bru.io.b_port.ack.valid & m_bru.io.o_flush & ~w_ex1_flush & ~w_ex2_lock
     }
 
-    w_ex1_unit_wait := ~m_bru.io.b_port.ack.valid
+    w_ex1_wait_unit := ~m_bru.io.b_port.ack.valid
     w_ex1.data.get.res := m_bru.io.b_port.ack.data.get
     w_br_new.addr := m_bru.io.o_br_new.addr
 
@@ -481,7 +477,7 @@ class ExStage (p: BackParams) extends Module {
     io.o_br_new := w_br_new
   }  
 
-  // Info
+  // Branch info
   val init_br_info = Wire( new BranchInfoBus(p.nAddrBit))
 
   init_br_info := DontCare
@@ -500,14 +496,14 @@ class ExStage (p: BackParams) extends Module {
   //             FLUSH
   // ------------------------------
   if (p.useBranchReg) {
-    r_pipe_flush := w_pipe_flush
+    r_flush_pipe := w_flush_pipe
 
-    io.o_flush := r_pipe_flush
+    io.o_flush := r_flush_pipe
   } else {
-    io.o_flush := w_pipe_flush
+    io.o_flush := w_flush_pipe
   } 
 
-  w_ex1_flush := r_pipe_flush | w_back_flush
+  w_ex1_flush := r_flush_pipe | w_back_flush
 
   // ------------------------------
   //           REGISTERS
@@ -520,20 +516,20 @@ class ExStage (p: BackParams) extends Module {
   }
 
   // Wait
-  w_ex1_wait := ~w_ex1_flush & (w_ex1_unit_wait | w_ex1_lock)
+  w_ex1_wait := ~w_ex1_flush & (w_ex1_wait_unit | w_ex1_lock)
 
   // Update registers
   if (p.nExStage > 2) {
     m_ex1.io.i_flush := w_back_flush
 
-    m_ex1.io.b_in.valid := w_ex1.valid & ~(w_ex1_unit_wait | w_ex1_flush)
+    m_ex1.io.b_in.valid := w_ex1.valid & ~(w_ex1_wait_unit | w_ex1_flush)
     m_ex1.io.b_in.ctrl.get := w_ex1.ctrl.get
 
     m_ex1.io.b_in.data.get.s1 := w_ex1.data.get.s1
     m_ex1.io.b_in.data.get.s3 := w_ex1.data.get.s3
     m_ex1.io.b_in.data.get.res := w_ex1.data.get.res
 
-    w_ex2_unit_wait := (m_ex1.io.b_out.ctrl.get.int.unit === INTUNIT.MULDIV)
+    w_ex2_wait_unit := (m_ex1.io.b_out.ctrl.get.int.unit === INTUNIT.MULDIV)
     
     m_ex1.io.b_out.ready := ~w_ex2_wait | w_ex2_flush
 
@@ -546,9 +542,9 @@ class ExStage (p: BackParams) extends Module {
     m_ex1.io.b_in.valid := false.B
     m_ex1.io.b_out.ready := false.B
 
-    w_ex2_unit_wait := (m_ex1.io.b_out.ctrl.get.int.unit === INTUNIT.MULDIV)
+    w_ex2_wait_unit := (m_ex1.io.b_out.ctrl.get.int.unit === INTUNIT.MULDIV)
 
-    w_ex2.valid := w_ex1.valid & ~(w_ex1_unit_wait | w_ex1_flush)
+    w_ex2.valid := w_ex1.valid & ~(w_ex1_wait_unit | w_ex1_flush)
     w_ex2.ctrl.get := w_ex1.ctrl.get
     w_ex2.data.get := w_ex1.data.get
   }
@@ -565,7 +561,7 @@ class ExStage (p: BackParams) extends Module {
     when (w_ex2.ctrl.get.int.unit === INTUNIT.MULDIV) {
       m_muldiv.get.io.b_port.ack.ready := w_ex2.valid & ~w_ex2_lock
 
-      w_ex2_unit_wait := ~m_muldiv.get.io.b_port.ack.valid
+      w_ex2_wait_unit := ~m_muldiv.get.io.b_port.ack.valid
       w_ex2.data.get.res := m_muldiv.get.io.b_port.ack.data.get
     }
   }
@@ -586,13 +582,13 @@ class ExStage (p: BackParams) extends Module {
   }
 
   // Wait
-  w_ex2_wait := ~w_ex2_flush & (w_ex2_unit_wait | w_ex2_lock)
+  w_ex2_wait := ~w_ex2_flush & (w_ex2_wait_unit | w_ex2_lock)
 
   // Update register
   if (p.useMemStage) {
     m_out.io.i_flush := w_back_flush
 
-    m_out.io.b_in.valid := w_ex2.valid & ~(w_ex2_unit_wait | w_ex2_flush)
+    m_out.io.b_in.valid := w_ex2.valid & ~(w_ex2_wait_unit | w_ex2_flush)
     m_out.io.b_in.ctrl.get := w_ex2.ctrl.get
 
     m_out.io.b_in.data.get.s1 := w_ex2.data.get.s1
@@ -606,7 +602,7 @@ class ExStage (p: BackParams) extends Module {
     m_out.io.b_in.valid := false.B
     m_out.io.b_out.ready := false.B
 
-    io.b_out.valid := w_ex2.valid & ~(w_ex2_unit_wait | w_ex2_flush)
+    io.b_out.valid := w_ex2.valid & ~(w_ex2_wait_unit | w_ex2_flush)
     io.b_out.ctrl.get := w_ex2.ctrl.get
     io.b_out.data.get := w_ex2.data.get
   }
@@ -616,14 +612,14 @@ class ExStage (p: BackParams) extends Module {
   // ******************************
   io.o_byp(0).valid := w_ex2.valid & w_ex2.ctrl.get.gpr.en
   io.o_byp(0).hart := w_ex2.ctrl.get.info.hart
-  io.o_byp(0).ready := ~(w_ex2.ctrl.get.lsu.ld | (w_ex2.ctrl.get.ext.ext =/= EXT.NONE) | w_ex2.ctrl.get.csr.read | w_ex2_unit_wait)
+  io.o_byp(0).ready := ~(w_ex2.ctrl.get.lsu.ld | (w_ex2.ctrl.get.ext.ext =/= EXT.NONE) | w_ex2.ctrl.get.csr.read | w_ex2_wait_unit)
   io.o_byp(0).addr := w_ex2.ctrl.get.gpr.addr
   io.o_byp(0).data := w_ex2.data.get.res
 
   if (p.nExStage > 2) {
-    io.o_byp(1).valid := w_ex1.valid & w_ex1.ctrl.get.gpr.en & ~w_ex1_unit_wait
+    io.o_byp(1).valid := w_ex1.valid & w_ex1.ctrl.get.gpr.en & ~w_ex1_wait_unit
     io.o_byp(1).hart := w_ex1.ctrl.get.info.hart
-    io.o_byp(1).ready := ~(w_ex1.ctrl.get.lsu.ld | (w_ex1.ctrl.get.ext.ext =/= EXT.NONE) | w_ex1.ctrl.get.csr.read | w_ex1_unit_wait | (io.b_in.ctrl.get.int.unit === INTUNIT.MULDIV))
+    io.o_byp(1).ready := ~(w_ex1.ctrl.get.lsu.ld | (w_ex1.ctrl.get.ext.ext =/= EXT.NONE) | w_ex1.ctrl.get.csr.read | w_ex1_wait_unit | (io.b_in.ctrl.get.int.unit === INTUNIT.MULDIV))
     io.o_byp(1).addr := w_ex1.ctrl.get.gpr.addr
     io.o_byp(1).data := w_ex1.data.get.res
 
