@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-04-11 12:19:12 pm                                       *
+ * Last Modified: 2023-04-17 12:40:11 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -319,7 +319,7 @@ class IdStage(p: BackParams) extends Module {
   // ******************************
   //             STAGE
   // ******************************  
-  io.o_stop := io.b_in.valid & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
+  io.o_stop := io.b_in.valid & ~w_wait & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
 
   io.o_stage.valid := io.b_in.valid
   io.o_stage.hart := io.b_in.ctrl.get.hart
