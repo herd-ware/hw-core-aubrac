@@ -1,10 +1,10 @@
 /*
- * File: priv.scala
+ * File: priv.scala                                                            *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 11:24:27 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-20 01:38:45 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -53,22 +53,26 @@ class Priv(p: CsrParams) extends Module {
   val init_csr = Wire(Vec(p.nHart, new CsrBus(p.nDataBit, false)))
 
   for (h <- 0 until p.nHart) {
-    init_csr(h).riscv             := DontCare
+    init_csr(h).riscv               := DontCare
 
-    init_csr(h).priv.get.mhartid  := h.U
+    init_csr(h).priv.get.mvendorid  := 0.U
+    init_csr(h).priv.get.marchid    := 0.U
+    init_csr(h).priv.get.mimpid     := 0.U
+    init_csr(h).priv.get.mhartid    := h.U
 
-    init_csr(h).priv.get.mstatus  := 0.U
-    init_csr(h).priv.get.medeleg  := 0.U
-    init_csr(h).priv.get.mideleg  := 0.U
-    init_csr(h).priv.get.mie      := 0.U
-    init_csr(h).priv.get.mtvec    := DontCare
+    init_csr(h).priv.get.mstatus    := 0.U
+    init_csr(h).priv.get.misa       := 0.U
+    init_csr(h).priv.get.medeleg    := 0.U
+    init_csr(h).priv.get.mideleg    := 0.U
+    init_csr(h).priv.get.mie        := 0.U
+    init_csr(h).priv.get.mtvec      := DontCare
 
-    init_csr(h).priv.get.mscratch := DontCare
-    init_csr(h).priv.get.mepc     := DontCare
-    init_csr(h).priv.get.mcause   := DontCare
-    init_csr(h).priv.get.mtval    := DontCare
-    init_csr(h).priv.get.mip      := DontCare
-    init_csr(h).priv.get.menvcfg  := DontCare
+    init_csr(h).priv.get.mscratch   := DontCare
+    init_csr(h).priv.get.mepc       := DontCare
+    init_csr(h).priv.get.mcause     := DontCare
+    init_csr(h).priv.get.mtval      := DontCare
+    init_csr(h).priv.get.mip        := DontCare
+    init_csr(h).priv.get.menvcfg    := DontCare
   }
 
   val r_csr = RegInit(init_csr)
@@ -166,9 +170,13 @@ class Priv(p: CsrParams) extends Module {
 
     when (io.b_read(h).valid) {
       switch (io.b_read(h).addr) {
+        is (MVENDORID.U)      {io.b_read(h).data := r_csr(0).priv.get.mvendorid}
+        is (MARCHID.U)        {io.b_read(h).data := r_csr(0).priv.get.marchid}
+        is (MIMPID.U)         {io.b_read(h).data := r_csr(0).priv.get.mimpid}
         is (MHARTID.U)        {io.b_read(h).data := r_csr(0).priv.get.mhartid}
 
         is (MSTATUS.U)        {io.b_read(h).data := r_csr(h).priv.get.mstatus((p.nDataBit - 1),0)}
+        is (MISA.U)           {io.b_read(h).data := r_csr(h).priv.get.misa}
         is (MTVEC.U)          {io.b_read(h).data := r_csr(h).priv.get.mtvec}
         is (MIE.U)            {io.b_read(h).data := r_csr(h).priv.get.mie}
 
@@ -266,6 +274,10 @@ class Priv(p: CsrParams) extends Module {
   //             DEBUG
   // ******************************
   if (p.debug) {
+    val w_test = Wire(new Csr2Bus(p.nDataBit))
+    w_test := DontCare
+    dontTouch(w_test)
+
     for (h <- 0 until p.nHart) {
       io.o_dbg.get(h) := r_csr(h)
       
