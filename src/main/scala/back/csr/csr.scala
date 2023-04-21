@@ -1,10 +1,10 @@
 /*
- * File: csr.scala
+ * File: csr.scala                                                             *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 07:59:51 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-21 09:53:44 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -45,7 +45,7 @@ class Csr(p: CsrParams) extends Module {
     val b_hfu = if (p.useChamp) Some(Vec(p.nHart, Flipped(new HfuCsrIO(p.nAddrBit, p.nChampTrapLvl)))) else None
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
-    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, p.useChamp)))) else None
+    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrDbgBus(p.nDataBit, p.useChamp, p.nChampTrapLvl)))) else None
   })
 
   if (p.useChamp) {

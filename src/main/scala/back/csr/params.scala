@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-27 05:30:34 pm                                       *
+ * Last Modified: 2023-04-20 01:54:58 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -34,6 +34,10 @@ trait CsrParams extends GenParams {
   def multiField: Boolean = false
   def nPart: Int
   def nChampTrapLvl: Int
+
+  def useExtM: Boolean
+  def useExtA: Boolean
+  def useExtB: Boolean
 }
 
 case class CsrConfig (
@@ -45,5 +49,9 @@ case class CsrConfig (
   useChamp: Boolean,
   nField: Int,
   nPart: Int,
-  nChampTrapLvl: Int
+  nChampTrapLvl: Int,
+
+  useExtM: Boolean,
+  useExtA: Boolean,
+  useExtB: Boolean
 ) extends CsrParams

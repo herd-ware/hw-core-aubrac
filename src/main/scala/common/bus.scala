@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 05:59:13 pm                                       *
+ * Last Modified: 2023-04-21 09:58:16 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -32,6 +32,23 @@ class BranchBus(nAddrBit: Int) extends Bundle {
 // ******************************
 //             TRAP
 // ******************************
+class CauseBus(nDataBit: Int) extends Bundle {
+  val code = UInt((nDataBit - 1).W)
+  val irq = Bool()
+
+  def toUInt: UInt = {
+    return Cat(irq, code)  
+  }
+
+  def low: UInt = {
+    return code(log2Ceil(nDataBit) - 1, 0)
+  }
+
+  def high: UInt = {
+    return code(nDataBit - 2, log2Ceil(nDataBit) - 1)
+  }
+}
+
 class TrapBus(nAddrBit: Int, nDataBit: Int) extends Bundle {
   val gen = Bool()
   val valid = Bool()
