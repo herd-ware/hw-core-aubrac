@@ -1,10 +1,10 @@
 /*
- * File: back.scala
+ * File: back.scala                                                            *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 07:58:40 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-11 06:52:20 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -46,8 +46,9 @@ class Back (p: BackParams) extends Module {
 
     val b_dmem = new Mb4sIO(p.pL0DBus)
     val b_cbo = if (p.useCbo) Some(new CboIO(p.nHart, p.useField, p.nField, p.nAddrBit)) else None
-    val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
     val b_clint = Flipped(new ClintIO(p.nDataBit))
+    
+    val b_hfu = if (p.useChamp) Some(Flipped(new HfuIO(p, p.nAddrBit, p.nDataBit, p.nChampTrapLvl))) else None
 
     val o_hpc = Output(new HpcPipelineBus())
     val i_hpm = Input(Vec(32, UInt(64.W)))
@@ -87,7 +88,7 @@ class Back (p: BackParams) extends Module {
   m_fsm.io.i_stop := m_id.io.o_stop | m_mem.io.o_stop | m_wb.io.o_stop
   m_fsm.io.i_empty := w_empty
   m_fsm.io.i_br := m_ex.io.o_br_new.valid
-  m_fsm.io.i_wb := m_wb.io.o_stage(1)
+  m_fsm.io.i_wb := m_wb.io.o_last
   m_fsm.io.i_raise := m_wb.io.o_raise
   m_fsm.io.b_clint <> io.b_clint 
 
@@ -228,6 +229,7 @@ class Back (p: BackParams) extends Module {
   //              I/O
   // ******************************
   io.o_hpc := m_wb.io.o_hpc
+  io.o_hpc.srcdep(0) := m_id.io.o_hpc_srcdep
 
   // ------------------------------
   //             BRANCH
@@ -250,7 +252,7 @@ class Back (p: BackParams) extends Module {
     val r_dbg_last = Reg(UInt(p.nAddrBit.W))
 
     when (m_wb.io.o_last.valid) {
-      r_dbg_last := m_wb.io.o_last.addr
+      r_dbg_last := m_wb.io.o_last.pc
     }
 
     io.o_dbg.get.last := r_dbg_last

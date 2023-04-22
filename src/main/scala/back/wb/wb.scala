@@ -1,10 +1,10 @@
 /*
- * File: wb.scala
+ * File: wb.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 08:00:52 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-21 09:58:26 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -36,23 +36,23 @@ class WbStage (p: BackParams) extends Module {
 
     val i_flush = Input(Bool())
 
+    val b_in = Flipped(new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit)))
+
     val o_stop = Output(Bool())
     val o_stage = Output(Vec(2, new StageBus(p.nHart, p.nAddrBit, p.nInstrBit)))
     val o_raise = Output(new RaiseBus(p.nAddrBit, p.nDataBit))
 
-    val b_in = Flipped(new GenRVIO(p, new MemCtrlBus(p), new ResultBus(p.nDataBit)))
+    val b_dmem = new Mb4sAckIO(p.pL0DBus)
+    val b_csr = Flipped(new CsrWriteIO(p.nDataBit))
+    val o_byp = Output(Vec(2, new BypassBus(p.nHart, p.nDataBit)))
+    val b_rd = Flipped(new GprWriteIO(p))
 
     // External units
     val b_hfu = if (p.useChamp) Some(Flipped(new HfuAckIO(p, p.nAddrBit, p.nDataBit))) else None
 
-    val b_dmem = new Mb4sAckIO(p.pL0DBus)
-    val b_csr = Flipped(new CsrWriteIO(p.nDataBit))
-    val b_rd = Flipped(new GprWriteIO(p))
-    val o_byp = Output(Vec(2, new BypassBus(p.nHart, p.nDataBit)))
-
     val o_hpc = Output(new HpcPipelineBus())
+    val o_last = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))
 
-    val o_last = Output(new BranchBus(p.nAddrBit))
     val o_etd = if (p.debug) Some(Output(new EtdBus(p.nHart, p.nAddrBit, p.nInstrBit))) else None
   })
 
@@ -229,15 +229,24 @@ class WbStage (p: BackParams) extends Module {
   //              HPC
   // ******************************
   io.o_hpc := 0.U.asTypeOf(io.o_hpc)
-
   when (~w_lock) {
     when (w_sload_av) {
-      io.o_hpc.instret := 1.U
-      io.o_hpc.ld := 1.U
-      io.o_hpc.st := m_sload.io.b_out.ctrl.get.hpc.st
+      io.o_hpc.instret(0) := 1.B
+      io.o_hpc.ld(0) := 1.B
+      io.o_hpc.st(0) := m_sload.io.b_out.ctrl.get.hpc.st
     }.elsewhen(io.b_in.valid & ~w_is_sload) {
-      io.o_hpc := io.b_in.ctrl.get.hpc
-      io.o_hpc.instret := 1.U
+      io.o_hpc.instret(0) := 1.B
+      io.o_hpc.alu(0) := io.b_in.ctrl.get.hpc.alu
+      io.o_hpc.bru(0) := io.b_in.ctrl.get.hpc.bru
+      io.o_hpc.ld(0) := io.b_in.ctrl.get.hpc.ld
+      io.o_hpc.mispred(0) := io.b_in.ctrl.get.hpc.mispred
+      io.o_hpc.rdcycle(0) := io.b_in.ctrl.get.hpc.rdcycle
+      io.o_hpc.st(0) := io.b_in.ctrl.get.hpc.st
+      io.o_hpc.call(0) := io.b_in.ctrl.get.hpc.call
+      io.o_hpc.ret(0) := io.b_in.ctrl.get.hpc.ret
+      io.o_hpc.jal(0) := io.b_in.ctrl.get.hpc.jal
+      io.o_hpc.jalr(0) := io.b_in.ctrl.get.hpc.jalr
+      io.o_hpc.cflush(0) := io.b_in.ctrl.get.hpc.cflush
     }
   }
 
@@ -330,8 +339,11 @@ class WbStage (p: BackParams) extends Module {
   // ******************************
   //             LAST
   // ******************************
-  io.o_last.valid := (io.b_in.valid & ~w_lock & ~w_is_sload) | w_sload_av
-  io.o_last.addr := Mux(w_sload_av, m_sload.io.b_out.ctrl.get.info.pc, io.b_in.ctrl.get.info.pc)
+  when (w_sload_av) {
+    io.o_last := io.o_stage(0)
+  }.otherwise {
+    io.o_last := io.o_stage(1)
+  }
 
   // ******************************
   //            DEBUG

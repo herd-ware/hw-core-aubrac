@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-02-25 10:58:33 pm                                       *
+ * Last Modified: 2023-04-03 12:36:22 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -42,8 +42,8 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
     val b_port = new IntUnitIO(p, nHart, nAddrBit, nDataBit)
 
     val i_br_next = Input(new BranchBus(nAddrBit))
-    val i_rs1_link = Input(Bool())
-    val i_rd_link = Input(Bool())
+    val i_call = Input(Bool())
+    val i_ret = Input(Bool())
 
     val o_br_info = Output(new BranchInfoBus(nAddrBit))
     val o_br_new = Output(new BranchBus(nAddrBit))
@@ -194,12 +194,12 @@ class Bru (p: GenParams, nHart: Int, nAddrBit: Int, nDataBit: Int, useExtZifence
     // ------------------------------
     is (JAL) {
       w_jmp := true.B
-      w_call := io.i_rd_link
+      w_call := io.i_call
     }
     is (JALR) {
       w_jmp := true.B
-      w_call := io.i_rd_link
-      w_ret := io.i_rs1_link
+      w_call := io.i_call
+      w_ret := io.i_ret
     }
 
     // ------------------------------

@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-08 09:35:02 am                                       *
+ * Last Modified: 2023-04-21 09:44:27 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -21,7 +21,7 @@ import chisel3.util._
 import herd.common.core.{HpcInstrBus}
 import herd.common.mem.mb4s.{OP => LSUUOP, AMO => LSUAMO}
 import herd.core.aubrac.front.{FrontBus}
-import herd.core.aubrac.back.csr.{UOP => CSRUOP, CsrBus}
+import herd.core.aubrac.back.csr.{UOP => CSRUOP, CsrDbgBus}
 import herd.core.aubrac.hfu.{CODE => HFUCODE, OP => HFUOP}
 import herd.core.aubrac.common._
 
@@ -82,6 +82,8 @@ class IntCtrlBus(nBackPort: Int) extends Bundle {
   val ssign = Vec(3, Bool())
   val ssize = Vec(3, UInt(INTSIZE.NBIT.W))
   val rsize = UInt(INTSIZE.NBIT.W)
+  val call = Bool()
+  val ret = Bool()
 }
 
 class LsuCtrlBus extends Bundle {
@@ -199,8 +201,6 @@ class DataBus(nDataBit: Int) extends Bundle {
   val s1 = UInt(nDataBit.W)
   val s2 = UInt(nDataBit.W)
   val s3 = UInt(nDataBit.W)
-  val rs1_link = Bool()
-  val rd_link = Bool()
 }
 
 class ResultBus(nDataBit: Int) extends Bundle {
@@ -223,5 +223,5 @@ class BypassBus(nHart: Int, nDataBit: Int) extends Bundle {
 class BackDbgBus (p: BackParams) extends Bundle {
   val last = UInt(p.nAddrBit.W)
   val x = Vec(32, UInt(p.nDataBit.W))
-  val csr = new CsrBus(p.nDataBit, p.useChamp)
+  val csr = new CsrDbgBus(p.nDataBit, p.useChamp, p.nChampTrapLvl)
 }

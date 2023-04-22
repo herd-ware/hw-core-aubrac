@@ -1,10 +1,10 @@
 /*
- * File: params.scala
+ * File: params.scala                                                          *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 11:41:53 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-12 09:40:50 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -45,7 +45,7 @@ trait PipelineParams extends NlpParams
   def nDataBit: Int 
 
   // ------------------------------
-  //            CHAMP
+  //             CHAMP
   // ------------------------------
   def useChamp: Boolean
   override def multiField: Boolean = false
@@ -503,12 +503,12 @@ trait AubracParams extends PipelineParams {
     nAddrBit        = nAddrBit        ,
     nAddrBase       = nIOAddrBase     ,
 
-    nChampTrapLvl    = nChampTrapLvl    ,
+    nChampTrapLvl    = nChampTrapLvl  ,
 
     useReqReg       = false           ,
     nScratch        = nScratch        ,
-    nCTimer         = nCTimer  ,
-    isHpmAct        = isHpmAct,
+    nCTimer         = nCTimer         ,
+    isHpmAct        = isHpmAct        ,
     hasHpmMap       = hasHpmMap
   )
 
@@ -686,7 +686,7 @@ trait AubracParams extends PipelineParams {
 }
 
 // ******************************
-//       AUBRAC CORE CONFIG 
+//         AUBRAC CONFIG 
 // ******************************
 case class AubracConfig (
   // ------------------------------
@@ -698,7 +698,7 @@ case class AubracConfig (
   nDataBit: Int, 
 
   // ------------------------------
-  //            CHAMP
+  //             CHAMP
   // ------------------------------
   useChamp: Boolean,
   nChampReg: Int,

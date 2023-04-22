@@ -1,10 +1,10 @@
 /*
- * File: consts.scala
+ * File: consts.scala                                                          *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-01 12:31:22 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-08 08:52:20 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -77,6 +77,8 @@ object INTUNIT {
   def ALU     = 1.U(NBIT.W)
   def BRU     = 2.U(NBIT.W)
   def MULDIV  = 3.U(NBIT.W)
+  def BALU    = 4.U(NBIT.W)
+  def CLMUL   = 5.U(NBIT.W)
 }
 
 object INTUOP {

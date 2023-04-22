@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-08 09:35:13 am                                       *
+ * Last Modified: 2023-04-21 10:26:52 am                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -54,50 +54,58 @@ class Champ(p: CsrParams) extends Module {
     val b_hfu = Vec(p.nHart, Flipped(new HfuCsrIO(p.nAddrBit, p.nChampTrapLvl)))
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
-    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, true)))) else None
+    val o_dbg = if (p.debug) Some(Output(Vec(p.nHart, new CsrDbgBus(p.nDataBit, true, p.nChampTrapLvl)))) else None
   })
 
   // ******************************
   //             INIT
   // ******************************
-  val init_csr = Wire(Vec(p.nHart, new CsrBus(p.nDataBit, true)))
+  val init_csr = Wire(Vec(p.nHart, new CsrBus(p.nDataBit, true, p.nChampTrapLvl)))
   init_csr := DontCare
 
   for (h <- 0 until p.nHart) {
-    init_csr(h).champ.get.chf         := 0.U 
-    init_csr(h).champ.get.phf         := 0.U 
+    init_csr(h).champ.get.chf               := 0.U 
+    init_csr(h).champ.get.phf               := 0.U 
     
-    init_csr(h).champ.get.hl0id       := h.U
+    init_csr(h).champ.get.hlxvendorid       := 0.U
+    init_csr(h).champ.get.hlxarchid         := 0.U
+    init_csr(h).champ.get.hlximpid          := 0.U
+    init_csr(h).champ.get.hlxid             := h.U
 
-    init_csr(h).champ.get.tl0status   := DontCare
-    init_csr(h).champ.get.tl0thf      := DontCare
-    init_csr(h).champ.get.tl0edeleg   := DontCare
-    init_csr(h).champ.get.tl0ideleg   := DontCare
-    init_csr(h).champ.get.tl0ie       := DontCare
-    init_csr(h).champ.get.tl0tvec     := DontCare
+    init_csr(h).champ.get.tlxstatus.ie      := 0.U.asTypeOf(init_csr(h).champ.get.tlxstatus.ie)
+    init_csr(h).champ.get.tlxstatus.pie     := 0.U.asTypeOf(init_csr(h).champ.get.tlxstatus.pie)
+    init_csr(h).champ.get.tlxisa.a          := p.useExtA.B
+    init_csr(h).champ.get.tlxisa.b          := p.useExtB.B
+    init_csr(h).champ.get.tlxisa.i          := true.B
+    init_csr(h).champ.get.tlxisa.m          := p.useExtM.B
+    if (p.nDataBit == 64) {
+      init_csr(h).champ.get.tlxisa.mxl      := 2.U 
+    } else {
+      init_csr(h).champ.get.tlxisa.mxl      := 1.U 
+    }
 
-    init_csr(h).champ.get.tl0scratch  := DontCare
-    init_csr(h).champ.get.tl0ehf      := DontCare
-    init_csr(h).champ.get.tl0epc      := DontCare 
-    init_csr(h).champ.get.tl0cause    := DontCare
-    init_csr(h).champ.get.tl0tval     := DontCare
-    init_csr(h).champ.get.tl0ip       := DontCare
+    for (tl <- 0 until p.nChampTrapLvl) {
+      init_csr(h).champ.get.tlxthf(tl)      := DontCare
+      init_csr(h).champ.get.tlxedeleg(tl)   := 0.U.asTypeOf(init_csr(h).champ.get.tlxedeleg(tl))
+      init_csr(h).champ.get.tlxideleg(tl)   := 0.U.asTypeOf(init_csr(h).champ.get.tlxedeleg(tl))
+      init_csr(h).champ.get.tlxie(tl).sie   := 0.U.asTypeOf(init_csr(h).champ.get.tlxie(tl).sie)
+      init_csr(h).champ.get.tlxie(tl).tie   := 0.U.asTypeOf(init_csr(h).champ.get.tlxie(tl).tie)
+      init_csr(h).champ.get.tlxie(tl).eie   := 0.U.asTypeOf(init_csr(h).champ.get.tlxie(tl).eie)
+      init_csr(h).champ.get.tlxtvec(tl)     := DontCare
 
-    init_csr(h).champ.get.tl1status   := DontCare
-    init_csr(h).champ.get.tl1thf      := DontCare
-    init_csr(h).champ.get.tl1edeleg   := DontCare
-    init_csr(h).champ.get.tl1ideleg   := DontCare
-    init_csr(h).champ.get.tl1ie       := DontCare
-    init_csr(h).champ.get.tl1tvec     := DontCare
+      init_csr(h).champ.get.tlxscratch(tl)  := DontCare
+      init_csr(h).champ.get.tlxehf(tl).hf   := DontCare
+      init_csr(h).champ.get.tlxehf(tl).hw   := false.B
+      init_csr(h).champ.get.tlxepc(tl)      := DontCare 
+      init_csr(h).champ.get.tlxcause(tl)    := DontCare
+      init_csr(h).champ.get.tlxtval(tl)     := DontCare
+      init_csr(h).champ.get.tlxip(tl)       := DontCare
+    }
 
-    init_csr(h).champ.get.tl1scratch  := DontCare
-    init_csr(h).champ.get.tl1ehf      := DontCare
-    init_csr(h).champ.get.tl1epc      := DontCare
-    init_csr(h).champ.get.tl1cause    := DontCare
-    init_csr(h).champ.get.tl1tval     := DontCare 
-    init_csr(h).champ.get.tl1ip       := DontCare 
-
-    init_csr(h).champ.get.envcfg      := DontCare 
+    init_csr(h).champ.get.envcfg.fiom      := DontCare
+    init_csr(h).champ.get.envcfg.cbie      := CBIE.INV
+    init_csr(h).champ.get.envcfg.cbcfe     := true.B
+    init_csr(h).champ.get.envcfg.cbze      := true.B
   }
 
   val r_csr = RegInit(init_csr)
@@ -128,39 +136,70 @@ class Champ(p: CsrParams) extends Module {
       switch (io.b_write(h).addr) {
         is (ENVCFG.U)           {
           when (io.b_field(io.b_hart(h).field).cbo) {
-            if (p.nDataBit > 32) {
-              r_csr(h).champ.get.envcfg := w_wdata(h)
-            } else {
-              r_csr(h).champ.get.envcfg := Cat(r_csr(h).champ.get.envcfg(63, 32), w_wdata(h))
-            }            
+            r_csr(h).champ.get.envcfg.cbie := w_wdata(h)(5, 4)
+            r_csr(h).champ.get.envcfg.cbcfe := w_wdata(h)(6)
+            r_csr(h).champ.get.envcfg.cbze := w_wdata(h)(7)          
           }
         }
       }
 
-      if (p.nDataBit == 32) {
-        switch (io.b_write(h).addr) {
-          is (ENVCFGH.U)           {
-            when (io.b_field(io.b_hart(h).field).cbo) {
-              r_csr(h).champ.get.envcfg := Cat(w_wdata(h), r_csr(h).champ.get.envcfg(31, 0))
-            }
-          }
-        }
-      }
+//      if (p.nDataBit == 32) {
+//        switch (io.b_write(h).addr) {
+//          is (ENVCFGH.U)           {
+//            when (io.b_field(io.b_hart(h).field).cbo) {
+//              r_csr(h).champ.get.envcfg := Cat(w_wdata(h), r_csr(h).champ.get.envcfg(31, 0))
+//            }
+//          }
+//        }
+//      }
 
       if (p.nChampTrapLvl > 0) {
         when (io.b_field(io.b_hart(h).field).tl(0)) {
           switch (io.b_write(h).addr) {
-            is (TL0STATUS.U)    {r_csr(h).champ.get.tl0status := w_wdata(h)}
-            is (TL0THF.U)       {r_csr(h).champ.get.tl0thf := w_wdata(h)}
-            is (TL0EDELEG.U)    {r_csr(h).champ.get.tl0edeleg := w_wdata(h)}
-            is (TL0IDELEG.U)    {r_csr(h).champ.get.tl0ideleg := w_wdata(h)}
-            is (TL0IE.U)        {r_csr(h).champ.get.tl0ie := w_wdata(h)}
-            is (TL0TVEC.U)      {r_csr(h).champ.get.tl0tvec := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))}
-            is (TL0SCRATCH.U)   {r_csr(h).champ.get.tl0scratch := w_wdata(h)}
-            is (TL0EHF.U)       {r_csr(h).champ.get.tl0ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), w_wdata(h)(4, 0))}
-            is (TL0EPC.U)       {r_csr(h).champ.get.tl0epc := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))
-                                 r_csr(h).champ.get.tl0ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), r_csr(h).champ.get.tl0ehf(4, 0))}                               
-            is (TL0TVAL.U)      {r_csr(h).champ.get.tl0tval := w_wdata(h)}
+            is (TL0STATUS.U) {
+              for (tl <- 0 until p.nChampTrapLvl) {
+                r_csr(h).champ.get.tlxstatus.ie(tl) := w_wdata(h)(0 + tl)
+              }              
+            }
+
+            is (TL0THF.U) {
+              r_csr(h).champ.get.tlxthf(0) := w_wdata(h)(4, 0)
+            }
+            is (TL0EDELEG.U) {
+              if (p.nChampTrapLvl > 1) {
+                r_csr(h).champ.get.tlxedeleg(0) := w_wdata(h).asBools
+              }
+            }
+            is (TL0IDELEG.U) {
+              if (p.nChampTrapLvl > 1) {
+                r_csr(h).champ.get.tlxideleg(0) := w_wdata(h).asBools
+              }
+            }
+            is (TL0IE.U) {
+              for (tl <- 0 until p.nChampTrapLvl) {
+                r_csr(h).champ.get.tlxie(0).sie(tl) := w_wdata(h)(0 + tl)
+                r_csr(h).champ.get.tlxie(0).tie(tl) := w_wdata(h)(4 + tl)
+                r_csr(h).champ.get.tlxie(0).eie(tl) := w_wdata(h)(8 + tl)
+              }              
+            }
+            is (TL0TVEC.U) {
+              r_csr(h).champ.get.tlxtvec(0).mode := 0.U
+              r_csr(h).champ.get.tlxtvec(0).base := w_wdata(h)(p.nAddrBit - 1, 2)
+            }
+            is (TL0SCRATCH.U) {
+              r_csr(h).champ.get.tlxscratch(0) := w_wdata(h)
+            }
+            is (TL0EHF.U) {
+              r_csr(h).champ.get.tlxehf(0).hf := w_wdata(h)(4, 0)
+              r_csr(h).champ.get.tlxehf(0).hw := 0.B
+            }
+            is (TL0EPC.U) {
+              r_csr(h).champ.get.tlxepc(0) := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))
+              r_csr(h).champ.get.tlxehf(0).hw := 0.B
+            }                               
+            is (TL0TVAL.U) {
+              r_csr(h).champ.get.tlxtval(0) := w_wdata(h)
+            }
           }
         }  
       }      
@@ -168,18 +207,53 @@ class Champ(p: CsrParams) extends Module {
       if (p.nChampTrapLvl > 1) {
         when (io.b_field(io.b_hart(h).field).tl(1)) {
           switch (io.b_write(h).addr) {
-            is (TL1STATUS.U)    {r_csr(h).champ.get.tl1status := w_wdata(h)}
-            is (TL1THF.U)       {r_csr(h).champ.get.tl1thf := w_wdata(h)}
-            is (TL1IE.U)        {r_csr(h).champ.get.tl1ie := w_wdata(h)}
-            is (TL1TVEC.U)      {r_csr(h).champ.get.tl1tvec := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))}
-            is (TL1SCRATCH.U)   {r_csr(h).champ.get.tl1scratch := w_wdata(h)}
-            is (TL1EHF.U)       {r_csr(h).champ.get.tl1ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), w_wdata(h)(4, 0))}
-            is (TL1EPC.U)       {r_csr(h).champ.get.tl1epc := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))
-                                 r_csr(h).champ.get.tl1ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), r_csr(h).champ.get.tl1ehf(4, 0))}
-            is (TL1TVAL.U)      {r_csr(h).champ.get.tl1tval := w_wdata(h)}
+            is (TL1STATUS.U) {
+              for (tl <- 1 until p.nChampTrapLvl) {
+                r_csr(h).champ.get.tlxstatus.ie(tl) := w_wdata(h)(0 + tl)
+              }         
+            }
+
+            is (TL1THF.U) {
+              r_csr(h).champ.get.tlxthf(1) := w_wdata(h)(4, 0)
+            }
+            is (TL1EDELEG.U) {
+              if (p.nChampTrapLvl > 2) {
+                r_csr(h).champ.get.tlxedeleg(1) := w_wdata(h).asBools
+              }
+            }
+            is (TL1IDELEG.U) {
+              if (p.nChampTrapLvl > 2) {
+                r_csr(h).champ.get.tlxideleg(1) := w_wdata(h).asBools
+              }
+            }
+            is (TL1IE.U) {
+              for (tl <- 1 until p.nChampTrapLvl) {
+                r_csr(h).champ.get.tlxie(1).sie(tl) := w_wdata(h)(0 + tl)
+                r_csr(h).champ.get.tlxie(1).tie(tl) := w_wdata(h)(4 + tl)
+                r_csr(h).champ.get.tlxie(1).eie(tl) := w_wdata(h)(8 + tl)
+              }              
+            }
+            is (TL1TVEC.U) {
+              r_csr(h).champ.get.tlxtvec(1).mode := 0.U
+              r_csr(h).champ.get.tlxtvec(1).base := w_wdata(h)(p.nAddrBit - 1, 2)
+            }
+            is (TL1SCRATCH.U) {
+              r_csr(h).champ.get.tlxscratch(1) := w_wdata(h)
+            }
+            is (TL1EHF.U) {
+              r_csr(h).champ.get.tlxehf(1).hf := w_wdata(h)(4, 0)
+              r_csr(h).champ.get.tlxehf(1).hw := 0.B
+            }
+            is (TL1EPC.U) {
+              r_csr(h).champ.get.tlxepc(1) := Cat(w_wdata(h)(p.nAddrBit - 1, 2), 0.U(2.W))
+              r_csr(h).champ.get.tlxehf(1).hw := 0.B
+            }                               
+            is (TL1TVAL.U) {
+              r_csr(h).champ.get.tlxtval(1) := w_wdata(h)
+            }
           }
-        }   
-      }       
+        }  
+      }      
     }
   }
 
@@ -189,48 +263,57 @@ class Champ(p: CsrParams) extends Module {
   // ------------------------------
   //          INFORMATION
   // ------------------------------
-  val w_is_tl0handler = Wire(Vec(p.nHart, Bool()))
-  val w_is_tl0deleg = Wire(Vec(p.nHart, Bool()))
-  val w_is_tl1handler = Wire(Vec(p.nHart, Bool()))
+  val w_is_tlxhandler = Wire(Vec(p.nHart, Vec(p.nChampTrapLvl, Bool())))
+  val w_is_tlxedeleg = Wire(Vec(p.nHart, Vec(p.nChampTrapLvl, Bool())))
+  val w_is_tlxideleg = Wire(Vec(p.nHart, Vec(p.nChampTrapLvl, Bool())))
+  val w_is_tlxdeleg = Wire(Vec(p.nHart, Vec(p.nChampTrapLvl, Bool())))
 
   for (h <- 0 until p.nHart) {
-    w_is_tl0handler(h) := io.b_field(io.b_hart(h).field).tl(0) & (r_csr(h).champ.get.tl0thf === io.b_hfu(h).chf)
-    if (p.nChampTrapLvl > 1) w_is_tl1handler(h) := (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf) else w_is_tl1handler(h) := false.B
-    w_is_tl0deleg(h) := (io.i_trap(h).cause(p.nDataBit - 2, 5) === 0.U) & r_csr(h).champ.get.tl0edeleg(io.i_trap(h).cause(4, 0)) & (r_csr(h).champ.get.tl1thf === io.b_hfu(h).chf)
+    for (tl <- 0 until p.nChampTrapLvl) {
+      w_is_tlxhandler(h)(tl) := io.b_field(io.b_hart(h).field).tl(tl) & (r_csr(h).champ.get.tlxthf(tl) === io.b_hfu(h).chf)
+      w_is_tlxedeleg(h)(tl) := (io.i_trap(h).src =/= TRAPSRC.IRQ) & r_csr(h).champ.get.tlxedeleg(tl)(io.i_trap(h).cause(log2Ceil(p.nDataBit) - 1, 0)) 
+      w_is_tlxideleg(h)(tl) := (io.i_trap(h).src === TRAPSRC.IRQ) & r_csr(h).champ.get.tlxideleg(tl)(io.i_trap(h).cause(log2Ceil(p.nDataBit) - 1, 0))
+      if ((tl + 1) < (p.nChampTrapLvl)) {
+        if (tl > 0) {
+          w_is_tlxdeleg(h)(tl) := (io.i_trap(h).cause(p.nDataBit - 2, log2Ceil(p.nDataBit)) === 0.U) & (w_is_tlxedeleg(h)(tl) | w_is_tlxideleg(h)(tl)) & w_is_tlxdeleg(h)(tl - 1)
+        } else {
+          w_is_tlxdeleg(h)(tl) := (io.i_trap(h).cause(p.nDataBit - 2, log2Ceil(p.nDataBit)) === 0.U) & (w_is_tlxedeleg(h)(tl) | w_is_tlxideleg(h)(tl))
+        }        
+      } else {
+        w_is_tlxdeleg(h)(tl) := false.B
+      }      
+    }
   }
 
   // ------------------------------
   //            UPDATE
   // ------------------------------
   for (h <- 0 until p.nHart) {
-    when (io.i_trap(h).valid) {
-      when ((io.i_trap(h).src === TRAPSRC.IRQ) | (io.i_trap(h).src === TRAPSRC.EXC)) {
-        when (~w_is_tl0handler(h) & w_is_tl0deleg(h)) {
-          r_csr(h).champ.get.tl1ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), io.b_hfu(h).chf)
-          r_csr(h).champ.get.tl1epc := io.i_trap(h).pc
-          r_csr(h).champ.get.tl1cause := Cat((io.i_trap(h).src === TRAPSRC.IRQ), io.i_trap(h).cause)
-          r_csr(h).champ.get.tl1tval := io.i_trap(h).info
-        }.otherwise {
-          r_csr(h).champ.get.tl0ehf := Cat(0.U(1.W), 0.U((p.nDataBit - 6).W), io.b_hfu(h).chf)
-          r_csr(h).champ.get.tl0epc := io.i_trap(h).pc
-          r_csr(h).champ.get.tl0cause := Cat((io.i_trap(h).src === TRAPSRC.IRQ), io.i_trap(h).cause)
-          r_csr(h).champ.get.tl0tval := io.i_trap(h).info
-        }
+    for (tl <- 0 until p.nChampTrapLvl) {
+      when (io.i_trap(h).valid) {
+        when ((io.i_trap(h).src === TRAPSRC.IRQ) | (io.i_trap(h).src === TRAPSRC.EXC)) {
+          when (
+            if (tl > 0) {
+              ~w_is_tlxdeleg(h)(tl) & w_is_tlxdeleg(h)(tl - 1)
+            } else {
+              ~w_is_tlxdeleg(h)(tl)
+            }
+          ) {
+            r_csr(h).champ.get.tlxehf(tl).hf := io.b_hfu(h).chf
+            r_csr(h).champ.get.tlxehf(tl).hw := 1.B
+            r_csr(h).champ.get.tlxepc(tl) := io.i_trap(h).pc
+            r_csr(h).champ.get.tlxcause(tl).irq := (io.i_trap(h).src === TRAPSRC.IRQ)
+            r_csr(h).champ.get.tlxcause(tl).code := io.i_trap(h).cause(p.nDataBit - 2, 0)
+            r_csr(h).champ.get.tlxtval(tl) := io.i_trap(h).info
+          }
+        } 
       } 
-    } 
 
-    if (p.nChampTrapLvl > 0) {
-      io.b_hfu(h).etl(0).sw := r_csr(h).champ.get.tl0ehf(p.nDataBit - 1)
-      io.b_hfu(h).etl(0).hf := r_csr(h).champ.get.tl0ehf(4, 0)
-      io.b_hfu(h).etl(0).pc := r_csr(h).champ.get.tl0epc
+      io.b_hfu(h).etl(tl).sw := r_csr(h).champ.get.tlxehf(tl).hw
+      io.b_hfu(h).etl(tl).hf := r_csr(h).champ.get.tlxehf(tl).hf
+      io.b_hfu(h).etl(tl).pc := r_csr(h).champ.get.tlxepc(tl)
     }
-
-    if (p.nChampTrapLvl > 0) {
-      io.b_hfu(h).etl(1).sw := r_csr(h).champ.get.tl1ehf(p.nDataBit - 1)
-      io.b_hfu(h).etl(1).hf := r_csr(h).champ.get.tl1ehf(4, 0)
-      io.b_hfu(h).etl(1).pc := r_csr(h).champ.get.tl1epc
-    }
-  }
+  }  
 
   // ------------------------------
   //       ACTIVE TRAP LEVEL
@@ -264,27 +347,27 @@ class Champ(p: CsrParams) extends Module {
     io.b_trap(h) := DontCare
     io.b_trap(h).valid := false.B
 
-    when (io.i_trap(h).valid) {
-      when (w_is_tl0deleg(h) & w_is_tl1handler(h)) {
-        io.o_br_trap(h).valid := true.B
-        io.o_br_trap(h).addr := r_csr(h).champ.get.tl1tvec
-      }.elsewhen (w_is_tl0handler(h)) {
-        io.o_br_trap(h).valid := true.B
-        io.o_br_trap(h).addr := r_csr(h).champ.get.tl0tvec          
-      }.otherwise {
-        io.b_trap(h).valid := true.B
-        io.b_trap(h).ctrl.get.code := HFUCODE.TRAP
-        io.b_trap(h).ctrl.get.op2 := HFUOP.IN
-        io.b_trap(h).ctrl.get.op3 := HFUOP.X
-        io.b_trap(h).ctrl.get.wb := false.B
-        when (w_is_tl0deleg(h)) {
-          r_atl(h)(1) := true.B
-          io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl1thf
-          io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tl1tvec
-        }.otherwise {
-          r_atl(h)(0) := true.B
-          io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tl0thf
-          io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tl0tvec
+    for (tl <- 0 until p.nChampTrapLvl) {
+      when (io.i_trap(h).valid) {
+        when (
+          if (tl > 0) {
+            ~w_is_tlxdeleg(h)(tl) & w_is_tlxdeleg(h)(tl - 1)
+          } else {
+            ~w_is_tlxdeleg(h)(tl)
+          }
+        ) {
+          when (w_is_tlxhandler(h)(tl)) {
+            io.o_br_trap(h).valid := true.B
+            io.o_br_trap(h).addr := r_csr(h).champ.get.tlxtvec(tl).addr
+          }.otherwise {
+            io.b_trap(h).valid := true.B
+            io.b_trap(h).ctrl.get.code := HFUCODE.TRAP
+            io.b_trap(h).ctrl.get.op2 := HFUOP.IN
+            io.b_trap(h).ctrl.get.op3 := HFUOP.X
+            io.b_trap(h).ctrl.get.wb := false.B
+            io.b_trap(h).ctrl.get.hfs1 := r_csr(h).champ.get.tlxthf(tl)
+            io.b_trap(h).data.get.s2 := r_csr(h).champ.get.tlxtvec(tl).addr
+          }
         }
       }
     }
@@ -296,26 +379,30 @@ class Champ(p: CsrParams) extends Module {
   // ------------------------------
   //            ENABLE
   // ------------------------------
-  val w_ie = Wire(Vec(p.nHart, Vec(2, Vec(p.nDataBit, Bool()))))
+  val w_ie = Wire(Vec(p.nHart, Vec(4, Vec(p.nDataBit, Bool()))))
 
+  w_ie := 0.U.asTypeOf(w_ie)
   for (h <- 0 until p.nHart) {
     // Interrupt reset
     io.b_clint(h).ir := 0.U
-    when (io.b_write(h).valid & (io.b_write(h).addr === TL0IP.U)) {
-      io.b_clint(h).ir := ~w_wdata(h)
+
+    when (io.b_write(h).valid & (io.b_write(h).addr === TL0IP.U) & io.b_field(io.b_hart(h).field).tl(0)) {
+      io.b_clint(h).ir := ~(w_wdata(h) & r_csr(h).champ.get.tlxip(0).mask(0))
     }
-    when (io.b_write(h).valid & (io.b_write(h).addr === TL1IP.U)) {
-      io.b_clint(h).ir := ~w_wdata(h)
+
+    when (io.b_write(h).valid & (io.b_write(h).addr === TL1IP.U) & io.b_field(io.b_hart(h).field).tl(1)) {
+      io.b_clint(h).ir := ~(w_wdata(h) & r_csr(h).champ.get.tlxip(1).mask(1))
     }
 
     // Interrupt enable    
-    for (b <- 0 until p.nDataBit) {
-      w_ie(h)(0)(b) := r_csr(h).champ.get.tl0status(0) & r_csr(h).champ.get.tl0ie(b)
-      w_ie(h)(1)(b) := r_csr(h).champ.get.tl1status(1) & r_csr(h).champ.get.tl1ie(b)     
+    for (tl <- 0 until p.nChampTrapLvl) {
+      for (b <- 0 until p.nDataBit) {
+        w_ie(h)(tl)(b) := r_csr(h).champ.get.tlxstatus.ie(tl) & (r_csr(h).champ.get.tlxie(tl).toUInt)(b) 
+      }
     }
 
-    io.b_clint(h).ie := w_ie(h)(0).asUInt | w_ie(h)(1).asUInt
-    io.o_ie(h) := w_ie(h)(0).asUInt | w_ie(h)(1).asUInt
+    io.b_clint(h).ie := w_ie(h)(0).asUInt | w_ie(h)(1).asUInt | w_ie(h)(2).asUInt | w_ie(h)(3).asUInt
+    io.o_ie(h) := w_ie(h)(0).asUInt | w_ie(h)(1).asUInt | w_ie(h)(2).asUInt | w_ie(h)(3).asUInt
   }
 
   // ******************************
@@ -330,8 +417,8 @@ class Champ(p: CsrParams) extends Module {
         is (CHF.U)            {io.b_read(h).data := io.b_hfu(h).chf}
         is (PHF.U)            {io.b_read(h).data := io.b_hfu(h).phf}
 
-        is (HL0ID.U)          {io.b_read(h).data := r_csr(0).champ.get.hl0id}
-        is (ENVCFG.U)         {io.b_read(h).data := r_csr(h).champ.get.envcfg((p.nDataBit - 1),0)}
+        is (HL0ID.U)          {io.b_read(h).data := r_csr(0).champ.get.hlxid}
+        is (ENVCFG.U)         {io.b_read(h).data := r_csr(h).champ.get.envcfg.toUInt}
 
         is (CYCLE.U)          {io.b_read(h).data := io.i_hpm(h)(0)((p.nDataBit - 1),0)}
         is (TIME.U)           {io.b_read(h).data := io.i_hpm(h)(1)((p.nDataBit - 1),0)}
@@ -369,7 +456,7 @@ class Champ(p: CsrParams) extends Module {
 
       if (p.nDataBit == 32) {
         switch (io.b_read(h).addr) {
-          is (ENVCFG.U)         {io.b_read(h).data := r_csr(h).champ.get.envcfg(63, 32)}
+          is (ENVCFG.U)         {io.b_read(h).data := 0.U}
           
           is (CYCLEH.U)         {io.b_read(h).data := io.i_hpm(h)(0)(63,32)}
           is (TIMEH.U)          {io.b_read(h).data := io.i_hpm(h)(1)(63,32)}
@@ -408,34 +495,36 @@ class Champ(p: CsrParams) extends Module {
 
       if (p.nChampTrapLvl > 0) {
         switch (io.b_read(h).addr) {
-          is (TL0STATUS.U)      {io.b_read(h).data := r_csr(h).champ.get.tl0status}
-          is (TL0THF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0thf}
-          is (TL0EDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tl0edeleg}
-          is (TL0IDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tl0ideleg}
-          is (TL0IE.U)          {io.b_read(h).data := r_csr(h).champ.get.tl0ie}
-          is (TL0TVEC.U)        {io.b_read(h).data := r_csr(h).champ.get.tl0tvec}
+          is (TL0STATUS.U)      {io.b_read(h).data := r_csr(h).champ.get.tlxstatus.status(0)}
+          is (TL0THF.U)         {io.b_read(h).data := r_csr(h).champ.get.tlxthf(0)}
+          is (TL0EDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tlxedeleg(0).asUInt}
+          is (TL0IDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tlxideleg(0).asUInt}
+          is (TL0IE.U)          {io.b_read(h).data := r_csr(h).champ.get.tlxie(0).toUInt}
+          is (TL0TVEC.U)        {io.b_read(h).data := r_csr(h).champ.get.tlxtvec(0).toUInt}
 
-          is (TL0SCRATCH.U)     {io.b_read(h).data := r_csr(h).champ.get.tl0scratch}
-          is (TL0EHF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0ehf}
-          is (TL0EPC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl0epc}
-          is (TL0CAUSE.U)       {io.b_read(h).data := r_csr(h).champ.get.tl0cause}
-          is (TL0TVAL.U)        {io.b_read(h).data := r_csr(h).champ.get.tl0tval}
+          is (TL0SCRATCH.U)     {io.b_read(h).data := r_csr(h).champ.get.tlxscratch(0)}
+          is (TL0EHF.U)         {io.b_read(h).data := r_csr(h).champ.get.tlxehf(0).toUInt}
+          is (TL0EPC.U)         {io.b_read(h).data := r_csr(h).champ.get.tlxepc(0)}
+          is (TL0CAUSE.U)       {io.b_read(h).data := r_csr(h).champ.get.tlxcause(0).toUInt}
+          is (TL0TVAL.U)        {io.b_read(h).data := r_csr(h).champ.get.tlxtval(0)}
           is (TL0IP.U)          {io.b_read(h).data := io.b_clint(h).ip}
         }
       }
 
       if (p.nChampTrapLvl > 1) {
         switch (io.b_read(h).addr) {
-          is (TL1STATUS.U)      {io.b_read(h).data := r_csr(h).champ.get.tl1status}
-          is (TL1THF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1thf}
-          is (TL1IE.U)          {io.b_read(h).data := r_csr(h).champ.get.tl1ie}
-          is (TL1TVEC.U)        {io.b_read(h).data := r_csr(h).champ.get.tl1tvec}
+          is (TL1STATUS.U)      {io.b_read(h).data := r_csr(h).champ.get.tlxstatus.status(1)}
+          is (TL1THF.U)         {io.b_read(h).data := r_csr(h).champ.get.tlxthf(1)}
+          is (TL1EDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tlxedeleg(1).asUInt}
+          is (TL1IDELEG.U)      {io.b_read(h).data := r_csr(h).champ.get.tlxideleg(1).asUInt}
+          is (TL1IE.U)          {io.b_read(h).data := r_csr(h).champ.get.tlxie(1).toUInt}
+          is (TL1TVEC.U)        {io.b_read(h).data := r_csr(h).champ.get.tlxtvec(1).toUInt}
 
-          is (TL1SCRATCH.U)     {io.b_read(h).data := r_csr(h).champ.get.tl1scratch}
-          is (TL1EHF.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1ehf}
-          is (TL1EPC.U)         {io.b_read(h).data := r_csr(h).champ.get.tl1epc}
-          is (TL1CAUSE.U)       {io.b_read(h).data := r_csr(h).champ.get.tl1cause}
-          is (TL1TVAL.U)        {io.b_read(h).data := r_csr(h).champ.get.tl1tval}
+          is (TL1SCRATCH.U)     {io.b_read(h).data := r_csr(h).champ.get.tlxscratch(1)}
+          is (TL1EHF.U)         {io.b_read(h).data := r_csr(h).champ.get.tlxehf(1).toUInt}
+          is (TL1EPC.U)         {io.b_read(h).data := r_csr(h).champ.get.tlxepc(1)}
+          is (TL1CAUSE.U)       {io.b_read(h).data := r_csr(h).champ.get.tlxcause(1).toUInt}
+          is (TL1TVAL.U)        {io.b_read(h).data := r_csr(h).champ.get.tlxtval(1)}
           is (TL1IP.U)          {io.b_read(h).data := io.b_clint(h).ip}
         }
       }
@@ -446,15 +535,9 @@ class Champ(p: CsrParams) extends Module {
   //            DECODER
   // ******************************
   for (h <- 0 until p.nHart) {
-    when (io.b_field(io.b_hart(h).field).cbo) {
-      io.o_decoder(h).cbie := CBIE.INV
-      io.o_decoder(h).cbcfe := true.B
-      io.o_decoder(h).cbze := true.B
-    }.otherwise {
-      io.o_decoder(h).cbie := r_csr(h).champ.get.envcfg(5, 4)
-      io.o_decoder(h).cbcfe := r_csr(h).champ.get.envcfg(6)
-      io.o_decoder(h).cbze := r_csr(h).champ.get.envcfg(7)
-    }
+    io.o_decoder(h).cbie := r_csr(h).champ.get.envcfg.cbie
+    io.o_decoder(h).cbcfe := r_csr(h).champ.get.envcfg.cbcfe
+    io.o_decoder(h).cbze := r_csr(h).champ.get.envcfg.cbze   
   }
 
   // ******************************
@@ -477,8 +560,6 @@ class Champ(p: CsrParams) extends Module {
     dontTouch(io.o_decoder)
     
     for (h <- 0 until p.nHart) {
-      io.o_dbg.get(h) := r_csr(h)
-
       io.o_dbg.get(h).riscv.cycle := io.i_hpm(h)(0) 
       io.o_dbg.get(h).riscv.time := io.i_hpm(h)(1) 
       io.o_dbg.get(h).riscv.instret := io.i_hpm(h)(2) 
@@ -491,7 +572,7 @@ class Champ(p: CsrParams) extends Module {
       io.o_dbg.get(h).riscv.hpmcounter9 := io.i_hpm(h)(9)
       io.o_dbg.get(h).riscv.hpmcounter10 := io.i_hpm(h)(10)
       io.o_dbg.get(h).riscv.hpmcounter11 := io.i_hpm(h)(11)
-      io.o_dbg.get(h).riscv.hpmcounter13 := io.i_hpm(h)(12)
+      io.o_dbg.get(h).riscv.hpmcounter12 := io.i_hpm(h)(12)
       io.o_dbg.get(h).riscv.hpmcounter13 := io.i_hpm(h)(13)
       io.o_dbg.get(h).riscv.hpmcounter14 := io.i_hpm(h)(14)
       io.o_dbg.get(h).riscv.hpmcounter15 := io.i_hpm(h)(15)
@@ -501,7 +582,7 @@ class Champ(p: CsrParams) extends Module {
       io.o_dbg.get(h).riscv.hpmcounter19 := io.i_hpm(h)(19)
       io.o_dbg.get(h).riscv.hpmcounter20 := io.i_hpm(h)(20)
       io.o_dbg.get(h).riscv.hpmcounter21 := io.i_hpm(h)(21)
-      io.o_dbg.get(h).riscv.hpmcounter23 := io.i_hpm(h)(22)
+      io.o_dbg.get(h).riscv.hpmcounter22 := io.i_hpm(h)(22)
       io.o_dbg.get(h).riscv.hpmcounter23 := io.i_hpm(h)(23)
       io.o_dbg.get(h).riscv.hpmcounter24 := io.i_hpm(h)(24)
       io.o_dbg.get(h).riscv.hpmcounter25 := io.i_hpm(h)(25)
@@ -514,6 +595,28 @@ class Champ(p: CsrParams) extends Module {
 
       io.o_dbg.get(h).champ.get.chf := io.b_hfu(h).chf
       io.o_dbg.get(h).champ.get.phf := io.b_hfu(h).phf
+
+      io.o_dbg.get(h).champ.get.hlxid := r_csr(h).champ.get.hlxid
+
+      for (tl <- 0 until p.nChampTrapLvl) {
+        io.o_dbg.get(h).champ.get.tlxstatus(tl) := r_csr(h).champ.get.tlxstatus.status(tl)
+        io.o_dbg.get(h).champ.get.tlxisa(tl) := r_csr(h).champ.get.tlxisa.toUInt
+
+        io.o_dbg.get(h).champ.get.tlxthf(tl) := r_csr(h).champ.get.tlxthf(tl)
+        io.o_dbg.get(h).champ.get.tlxedeleg(tl) := r_csr(h).champ.get.tlxedeleg(tl).asUInt
+        io.o_dbg.get(h).champ.get.tlxideleg(tl) := r_csr(h).champ.get.tlxideleg(tl).asUInt
+        io.o_dbg.get(h).champ.get.tlxie(tl) := r_csr(h).champ.get.tlxie(tl).toUInt
+        io.o_dbg.get(h).champ.get.tlxtvec(tl) := r_csr(h).champ.get.tlxtvec(tl).toUInt
+
+        io.o_dbg.get(h).champ.get.tlxscratch(tl) := r_csr(h).champ.get.tlxscratch(tl)
+        io.o_dbg.get(h).champ.get.tlxehf(tl) := r_csr(h).champ.get.tlxehf(tl).toUInt
+        io.o_dbg.get(h).champ.get.tlxepc(tl) := r_csr(h).champ.get.tlxepc(tl)
+        io.o_dbg.get(h).champ.get.tlxcause(tl) := r_csr(h).champ.get.tlxcause(tl).toUInt
+        io.o_dbg.get(h).champ.get.tlxtval(tl) := r_csr(h).champ.get.tlxtval(tl)
+        io.o_dbg.get(h).champ.get.tlxip(tl) := r_csr(h).champ.get.tlxip(tl).toUInt
+      }
+
+      io.o_dbg.get(h).champ.get.envcfg := r_csr(h).champ.get.envcfg.toUInt
     }    
 
     // ------------------------------

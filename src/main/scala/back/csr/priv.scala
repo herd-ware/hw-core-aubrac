@@ -1,10 +1,10 @@
 /*
- * File: priv.scala
+ * File: priv.scala                                                            *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-02 11:24:27 pm
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-21 10:15:26 am                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -44,31 +44,51 @@ class Priv(p: CsrParams) extends Module {
     val o_decoder = Output(Vec(p.nHart, new CsrDecoderBus()))
     val b_clint = Vec(p.nHart, Flipped(new ClintIO(p.nDataBit)))
 
-    val o_dbg = if(p.debug) Some(Output(Vec(p.nHart, new CsrBus(p.nDataBit, false)))) else None
+    val o_dbg = if(p.debug) Some(Output(Vec(p.nHart, new CsrDbgBus(p.nDataBit, false, 0)))) else None
   })
 
   // ******************************
   //             INIT
   // ******************************
-  val init_csr = Wire(Vec(p.nHart, new CsrBus(p.nDataBit, false)))
+  val init_csr = Wire(Vec(p.nHart, new CsrBus(p.nDataBit, false, 0)))
 
   for (h <- 0 until p.nHart) {
-    init_csr(h).riscv             := DontCare
+    init_csr(h).riscv                   := DontCare
 
-    init_csr(h).priv.get.mhartid  := h.U
+    init_csr(h).priv.get.mvendorid      := 0.U
+    init_csr(h).priv.get.marchid        := 0.U
+    init_csr(h).priv.get.mimpid         := 0.U
+    init_csr(h).priv.get.mhartid        := h.U
 
-    init_csr(h).priv.get.mstatus  := 0.U
-    init_csr(h).priv.get.medeleg  := 0.U
-    init_csr(h).priv.get.mideleg  := 0.U
-    init_csr(h).priv.get.mie      := 0.U
-    init_csr(h).priv.get.mtvec    := DontCare
+    init_csr(h).priv.get.cp             := PRIV.M
+    init_csr(h).priv.get.xstatus.mie    := 0.B
+    init_csr(h).priv.get.xstatus.mpp    := 0.B
+    init_csr(h).priv.get.xstatus.mpie   := 0.U
+    init_csr(h).priv.get.xisa.a         := p.useExtA.B
+    init_csr(h).priv.get.xisa.b         := p.useExtB.B
+    init_csr(h).priv.get.xisa.i         := true.B
+    init_csr(h).priv.get.xisa.m         := p.useExtM.B
+    if (p.nDataBit == 64) {
+      init_csr(h).priv.get.xisa.mxl     := 2.U 
+    } else {
+      init_csr(h).priv.get.xisa.mxl     := 1.U 
+    }
+    init_csr(h).priv.get.medeleg        := 0.U.asTypeOf(init_csr(h).priv.get.medeleg)
+    init_csr(h).priv.get.mideleg        := 0.U.asTypeOf(init_csr(h).priv.get.mideleg)
+    init_csr(h).priv.get.mie.msie       := 0.B
+    init_csr(h).priv.get.mie.mtie       := 0.B
+    init_csr(h).priv.get.mie.meie       := 0.B
+    init_csr(h).priv.get.mtvec          := DontCare
 
-    init_csr(h).priv.get.mscratch := DontCare
-    init_csr(h).priv.get.mepc     := DontCare
-    init_csr(h).priv.get.mcause   := DontCare
-    init_csr(h).priv.get.mtval    := DontCare
-    init_csr(h).priv.get.mip      := DontCare
-    init_csr(h).priv.get.menvcfg  := DontCare
+    init_csr(h).priv.get.mscratch       := DontCare
+    init_csr(h).priv.get.mepc           := DontCare
+    init_csr(h).priv.get.mcause         := DontCare
+    init_csr(h).priv.get.mtval          := DontCare
+    init_csr(h).priv.get.mip            := DontCare
+    init_csr(h).priv.get.menvcfg.fiom   := DontCare
+    init_csr(h).priv.get.menvcfg.cbie   := CBIE.INV
+    init_csr(h).priv.get.menvcfg.cbcfe  := true.B
+    init_csr(h).priv.get.menvcfg.cbze   := true.B
   }
 
   val r_csr = RegInit(init_csr)
@@ -97,23 +117,33 @@ class Priv(p: CsrParams) extends Module {
   for (h <- 0 until p.nHart) {
     when (io.b_write(h).valid) {
       switch(io.b_write(h).addr) {         
-        is (MSTATUS.U)  {
-          if (p.nDataBit == 64) {
-            r_csr(h).priv.get.mstatus := w_wdata(h)
-          } else {
-            r_csr(h).priv.get.mstatus := Cat(r_csr(h).priv.get.mstatus(63, 32), w_wdata(h))
-          }          
+        is (MSTATUS.U) {
+          r_csr(h).priv.get.xstatus.mie := w_wdata(h)(3)
+          r_csr(h).priv.get.xstatus.mpp := w_wdata(h)(8)        
         }
-        is (MSTATUSH.U)  {
-          if (p.nDataBit == 32) {
-            r_csr(h).priv.get.mstatus := Cat(w_wdata(h), r_csr(h).priv.get.mstatus(31, 0))
-          }          
+//        is (MSTATUSH.U)  {
+//          if (p.nDataBit == 32) {
+//            
+//          }          
+//        }
+        is (MIE.U) {
+          r_csr(h).priv.get.mie.msie := w_wdata(h)(0)
+          r_csr(h).priv.get.mie.mtie := w_wdata(h)(4)
+          r_csr(h).priv.get.mie.meie := w_wdata(h)(8)
         }
-        is (MIE.U)      {r_csr(h).priv.get.mie := w_wdata(h)}
-        is (MTVEC.U)    {r_csr(h).priv.get.mtvec := Cat(w_wdata(h)(p.nDataBit - 1, 2), 0.U(2.W))}
-        is (MSCRATCH.U) {r_csr(h).priv.get.mscratch := w_wdata(h)}
-        is (MEPC.U)     {r_csr(h).priv.get.mepc := Cat(w_wdata(h)(p.nDataBit - 1, 2), 0.U(2.W))}
-        is (MTVAL.U)    {r_csr(h).priv.get.mtval := w_wdata(h)}
+        is (MTVEC.U) {
+          r_csr(h).priv.get.mtvec.mode  := 0.U
+          r_csr(h).priv.get.mtvec.base  := w_wdata(h)(p.nDataBit - 1, 2)
+        }
+        is (MSCRATCH.U) {
+          r_csr(h).priv.get.mscratch := w_wdata(h)
+        }
+        is (MEPC.U) {
+          r_csr(h).priv.get.mepc := Cat(w_wdata(h)(p.nDataBit - 1, 2), 0.U(2.W))
+        }
+        is (MTVAL.U) {
+          r_csr(h).priv.get.mtval := w_wdata(h)
+        }
       }     
     }
   }
@@ -128,11 +158,12 @@ class Priv(p: CsrParams) extends Module {
     when (io.i_trap(h).valid) {
       when ((io.i_trap(h).src === TRAPSRC.IRQ) | (io.i_trap(h).src === TRAPSRC.EXC)) {
         r_csr(h).priv.get.mepc := io.i_trap(h).pc
-        r_csr(h).priv.get.mcause := Cat((io.i_trap(h).src === TRAPSRC.IRQ), io.i_trap(h).cause)
+        r_csr(h).priv.get.mcause.code := io.i_trap(h).cause
+        r_csr(h).priv.get.mcause.irq := (io.i_trap(h).src === TRAPSRC.IRQ)
         r_csr(h).priv.get.mtval := io.i_trap(h).info
 
         io.o_br_trap(h).valid := true.B
-        io.o_br_trap(h).addr := r_csr(h).priv.get.mtvec
+        io.o_br_trap(h).addr := r_csr(h).priv.get.mtvec.addr
       }.elsewhen(io.i_trap(h).src === TRAPSRC.MRET) {
         io.o_br_trap(h).valid := true.B
         io.o_br_trap(h).addr := r_csr(h).priv.get.mepc
@@ -151,7 +182,7 @@ class Priv(p: CsrParams) extends Module {
 
     // Interrupt enable
     for (b <- 0 until p.nDataBit) {
-      w_ie(h)(b) := r_csr(h).priv.get.mstatus(3) & r_csr(h).priv.get.mie(b)    
+      w_ie(h)(b) := r_csr(h).priv.get.xstatus.mie & r_csr(h).priv.get.mie.toUInt(b)    
     }
     io.b_clint(h).ie := w_ie(h).asUInt
     io.o_ie(h) := w_ie(h).asUInt
@@ -166,18 +197,6 @@ class Priv(p: CsrParams) extends Module {
 
     when (io.b_read(h).valid) {
       switch (io.b_read(h).addr) {
-        is (MHARTID.U)        {io.b_read(h).data := r_csr(0).priv.get.mhartid}
-
-        is (MSTATUS.U)        {io.b_read(h).data := r_csr(h).priv.get.mstatus((p.nDataBit - 1),0)}
-        is (MTVEC.U)          {io.b_read(h).data := r_csr(h).priv.get.mtvec}
-        is (MIE.U)            {io.b_read(h).data := r_csr(h).priv.get.mie}
-
-        is (MSCRATCH.U)       {io.b_read(h).data := r_csr(h).priv.get.mscratch}
-        is (MEPC.U)           {io.b_read(h).data := r_csr(h).priv.get.mepc}
-        is (MCAUSE.U)         {io.b_read(h).data := r_csr(h).priv.get.mcause}
-        is (MTVAL.U)          {io.b_read(h).data := r_csr(h).priv.get.mtval}
-        is (MIP.U)            {io.b_read(h).data := io.b_clint(h).ip}
-
         is (CYCLE.U)          {io.b_read(h).data := io.i_hpm(h)(0)((p.nDataBit - 1),0)}
         is (TIME.U)           {io.b_read(h).data := io.i_hpm(h)(1)((p.nDataBit - 1),0)}
         is (INSTRET.U)        {io.b_read(h).data := io.i_hpm(h)(2)((p.nDataBit - 1),0)}
@@ -210,11 +229,27 @@ class Priv(p: CsrParams) extends Module {
         is (HPMCOUNTER29.U)   {io.b_read(h).data := io.i_hpm(h)(29)((p.nDataBit - 1),0)}
         is (HPMCOUNTER30.U)   {io.b_read(h).data := io.i_hpm(h)(30)((p.nDataBit - 1),0)}
         is (HPMCOUNTER31.U)   {io.b_read(h).data := io.i_hpm(h)(31)((p.nDataBit - 1),0)}
+
+        is (MVENDORID.U)      {io.b_read(h).data := r_csr(0).priv.get.mvendorid}
+        is (MARCHID.U)        {io.b_read(h).data := r_csr(0).priv.get.marchid}
+        is (MIMPID.U)         {io.b_read(h).data := r_csr(0).priv.get.mimpid}
+        is (MHARTID.U)        {io.b_read(h).data := r_csr(0).priv.get.mhartid}
+
+        is (MSTATUS.U)        {io.b_read(h).data := r_csr(h).priv.get.xstatus.m}
+        is (MISA.U)           {io.b_read(h).data := r_csr(h).priv.get.xisa.toUInt}
+        is (MTVEC.U)          {io.b_read(h).data := r_csr(h).priv.get.mtvec.toUInt}
+        is (MIE.U)            {io.b_read(h).data := r_csr(h).priv.get.mie.toUInt}
+
+        is (MSCRATCH.U)       {io.b_read(h).data := r_csr(h).priv.get.mscratch}
+        is (MEPC.U)           {io.b_read(h).data := r_csr(h).priv.get.mepc}
+        is (MCAUSE.U)         {io.b_read(h).data := r_csr(h).priv.get.mcause.toUInt}
+        is (MTVAL.U)          {io.b_read(h).data := r_csr(h).priv.get.mtval}
+        is (MIP.U)            {io.b_read(h).data := io.b_clint(h).ip.asUInt}
       }
 
       if (p.nDataBit == 32) {
         switch (io.b_read(h).addr) {
-          is (MSTATUSH.U)       {io.b_read(h).data := r_csr(h).priv.get.mstatus(63,32)}
+          is (MSTATUSH.U)       {io.b_read(h).data := 0.U}
 
           is (CYCLEH.U)         {io.b_read(h).data := io.i_hpm(h)(0)(63,32)}
           is (TIMEH.U)          {io.b_read(h).data := io.i_hpm(h)(1)(63,32)}
@@ -257,50 +292,69 @@ class Priv(p: CsrParams) extends Module {
   //            DECODER
   // ******************************
   for (h <- 0 until p.nHart) {
-    io.o_decoder(h).cbie := CBIE.INV
-    io.o_decoder(h).cbcfe := true.B
-    io.o_decoder(h).cbze := true.B    
+    io.o_decoder(h).cbie := r_csr(h).priv.get.menvcfg.cbie
+    io.o_decoder(h).cbcfe := r_csr(h).priv.get.menvcfg.cbcfe
+    io.o_decoder(h).cbze := r_csr(h).priv.get.menvcfg.cbze  
   }
 
   // ******************************
   //             DEBUG
   // ******************************
   if (p.debug) {
-    for (h <- 0 until p.nHart) {
-      io.o_dbg.get(h) := r_csr(h)
-      
-      io.o_dbg.get(h).riscv.cycle := io.i_hpm(h)(0) 
-      io.o_dbg.get(h).riscv.time := io.i_hpm(h)(1) 
-      io.o_dbg.get(h).riscv.instret := io.i_hpm(h)(2) 
-      io.o_dbg.get(h).riscv.hpmcounter3 := io.i_hpm(h)(3)
-      io.o_dbg.get(h).riscv.hpmcounter4 := io.i_hpm(h)(4)
-      io.o_dbg.get(h).riscv.hpmcounter5 := io.i_hpm(h)(5)
-      io.o_dbg.get(h).riscv.hpmcounter6 := io.i_hpm(h)(6)
-      io.o_dbg.get(h).riscv.hpmcounter7 := io.i_hpm(h)(7)
-      io.o_dbg.get(h).riscv.hpmcounter8 := io.i_hpm(h)(8)
-      io.o_dbg.get(h).riscv.hpmcounter9 := io.i_hpm(h)(9)
-      io.o_dbg.get(h).riscv.hpmcounter10 := io.i_hpm(h)(10)
-      io.o_dbg.get(h).riscv.hpmcounter11 := io.i_hpm(h)(11)
-      io.o_dbg.get(h).riscv.hpmcounter13 := io.i_hpm(h)(12)
-      io.o_dbg.get(h).riscv.hpmcounter13 := io.i_hpm(h)(13)
-      io.o_dbg.get(h).riscv.hpmcounter14 := io.i_hpm(h)(14)
-      io.o_dbg.get(h).riscv.hpmcounter15 := io.i_hpm(h)(15)
-      io.o_dbg.get(h).riscv.hpmcounter16 := io.i_hpm(h)(16)
-      io.o_dbg.get(h).riscv.hpmcounter17 := io.i_hpm(h)(17)
-      io.o_dbg.get(h).riscv.hpmcounter18 := io.i_hpm(h)(18)
-      io.o_dbg.get(h).riscv.hpmcounter19 := io.i_hpm(h)(19)
-      io.o_dbg.get(h).riscv.hpmcounter20 := io.i_hpm(h)(20)
-      io.o_dbg.get(h).riscv.hpmcounter21 := io.i_hpm(h)(21)
-      io.o_dbg.get(h).riscv.hpmcounter23 := io.i_hpm(h)(22)
-      io.o_dbg.get(h).riscv.hpmcounter23 := io.i_hpm(h)(23)
-      io.o_dbg.get(h).riscv.hpmcounter24 := io.i_hpm(h)(24)
-      io.o_dbg.get(h).riscv.hpmcounter25 := io.i_hpm(h)(25)
-      io.o_dbg.get(h).riscv.hpmcounter26 := io.i_hpm(h)(26)
-      io.o_dbg.get(h).riscv.hpmcounter27 := io.i_hpm(h)(27)
-      io.o_dbg.get(h).riscv.hpmcounter28 := io.i_hpm(h)(28)
-      io.o_dbg.get(h).riscv.hpmcounter29 := io.i_hpm(h)(29)
-      io.o_dbg.get(h).riscv.hpmcounter30 := io.i_hpm(h)(30)
-      io.o_dbg.get(h).riscv.hpmcounter31 := io.i_hpm(h)(31)
+    for (h <- 0 until p.nHart) {      
+      io.o_dbg.get(h).riscv.cycle         := io.i_hpm(h)(0) 
+      io.o_dbg.get(h).riscv.time          := io.i_hpm(h)(1) 
+      io.o_dbg.get(h).riscv.instret       := io.i_hpm(h)(2) 
+      io.o_dbg.get(h).riscv.hpmcounter3   := io.i_hpm(h)(3)
+      io.o_dbg.get(h).riscv.hpmcounter4   := io.i_hpm(h)(4)
+      io.o_dbg.get(h).riscv.hpmcounter5   := io.i_hpm(h)(5)
+      io.o_dbg.get(h).riscv.hpmcounter6   := io.i_hpm(h)(6)
+      io.o_dbg.get(h).riscv.hpmcounter7   := io.i_hpm(h)(7)
+      io.o_dbg.get(h).riscv.hpmcounter8   := io.i_hpm(h)(8)
+      io.o_dbg.get(h).riscv.hpmcounter9   := io.i_hpm(h)(9)
+      io.o_dbg.get(h).riscv.hpmcounter10  := io.i_hpm(h)(10)
+      io.o_dbg.get(h).riscv.hpmcounter11  := io.i_hpm(h)(11)
+      io.o_dbg.get(h).riscv.hpmcounter12  := io.i_hpm(h)(12)
+      io.o_dbg.get(h).riscv.hpmcounter13  := io.i_hpm(h)(13)
+      io.o_dbg.get(h).riscv.hpmcounter14  := io.i_hpm(h)(14)
+      io.o_dbg.get(h).riscv.hpmcounter15  := io.i_hpm(h)(15)
+      io.o_dbg.get(h).riscv.hpmcounter16  := io.i_hpm(h)(16)
+      io.o_dbg.get(h).riscv.hpmcounter17  := io.i_hpm(h)(17)
+      io.o_dbg.get(h).riscv.hpmcounter18  := io.i_hpm(h)(18)
+      io.o_dbg.get(h).riscv.hpmcounter19  := io.i_hpm(h)(19)
+      io.o_dbg.get(h).riscv.hpmcounter20  := io.i_hpm(h)(20)
+      io.o_dbg.get(h).riscv.hpmcounter21  := io.i_hpm(h)(21)
+      io.o_dbg.get(h).riscv.hpmcounter22  := io.i_hpm(h)(22)
+      io.o_dbg.get(h).riscv.hpmcounter23  := io.i_hpm(h)(23)
+      io.o_dbg.get(h).riscv.hpmcounter24  := io.i_hpm(h)(24)
+      io.o_dbg.get(h).riscv.hpmcounter25  := io.i_hpm(h)(25)
+      io.o_dbg.get(h).riscv.hpmcounter26  := io.i_hpm(h)(26)
+      io.o_dbg.get(h).riscv.hpmcounter27  := io.i_hpm(h)(27)
+      io.o_dbg.get(h).riscv.hpmcounter28  := io.i_hpm(h)(28)
+      io.o_dbg.get(h).riscv.hpmcounter29  := io.i_hpm(h)(29)
+      io.o_dbg.get(h).riscv.hpmcounter30  := io.i_hpm(h)(30)
+      io.o_dbg.get(h).riscv.hpmcounter31  := io.i_hpm(h)(31)
+
+      io.o_dbg.get(h).priv.get.mvendorid  := r_csr(h).priv.get.mvendorid
+      io.o_dbg.get(h).priv.get.marchid    := r_csr(h).priv.get.marchid
+      io.o_dbg.get(h).priv.get.mimpid     := r_csr(h).priv.get.mimpid
+      io.o_dbg.get(h).priv.get.mhartid    := r_csr(h).priv.get.mhartid
+
+      io.o_dbg.get(h).priv.get.cp         := r_csr(h).priv.get.cp
+      io.o_dbg.get(h).priv.get.mstatus    := r_csr(h).priv.get.xstatus.m
+      io.o_dbg.get(h).priv.get.misa       := r_csr(h).priv.get.xisa.toUInt
+      io.o_dbg.get(h).priv.get.medeleg    := r_csr(h).priv.get.medeleg.asUInt()
+      io.o_dbg.get(h).priv.get.mideleg    := r_csr(h).priv.get.mideleg.asUInt()
+      io.o_dbg.get(h).priv.get.mie        := r_csr(h).priv.get.mie.toUInt
+      io.o_dbg.get(h).priv.get.mtvec      := r_csr(h).priv.get.mtvec.toUInt
+
+      io.o_dbg.get(h).priv.get.mscratch   := r_csr(h).priv.get.mscratch
+      io.o_dbg.get(h).priv.get.mepc       := r_csr(h).priv.get.mepc
+      io.o_dbg.get(h).priv.get.mcause     := r_csr(h).priv.get.mcause.toUInt
+      io.o_dbg.get(h).priv.get.mtval      := r_csr(h).priv.get.mtval
+      io.o_dbg.get(h).priv.get.mip        := io.b_clint(h).ip
+
+      io.o_dbg.get(h).priv.get.menvcfg    := r_csr(h).priv.get.menvcfg.toUInt
     }
   }
 }

@@ -1,10 +1,10 @@
 /*
- * File: id.scala
+ * File: id.scala                                                              *
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-03 08:25:08 am
- * Modified By: Mathieu Escouteloup
+ * Last Modified: 2023-04-17 12:40:11 pm                                       *
+ * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
  * Copyright (c) 2023 HerdWare                                                 *
@@ -102,18 +102,19 @@ class IdStage(p: BackParams) extends Module {
     val b_back = if (p.useField) Some(new RsrcIO(p.nHart, p.nField, 1)) else None
     
     val i_flush = Input(Bool())
-    val o_flush = Output(Bool())
-
-    val i_csr = Input(new CsrDecoderBus())
-    val o_stop = Output(Bool())
-    val o_stage = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))    
+    val o_flush = Output(Bool()) 
 
     val b_in = Flipped(new GenRVIO(p, new BackPortBus(p.debug, p.nHart, p.nAddrBit, p.nInstrBit), UInt(0.W)))
+    
+    val b_rs = Vec(2, Flipped(new GprReadIO(p)))
 
+    val i_csr = Input(new CsrDecoderBus()) 
     val i_end = Input(Bool())
     val i_pend = Input(Bool())
+    val o_stop = Output(Bool())
+    val o_stage = Output(new StageBus(p.nHart, p.nAddrBit, p.nInstrBit))  
 
-    val b_rs = Vec(2, Flipped(new GprReadIO(p)))
+    val o_hpc_srcdep = Output(Bool())
 
     val b_out = new GenRVIO(p, new ExCtrlBus(p), new DataBus(p.nDataBit))
   })
@@ -218,27 +219,18 @@ class IdStage(p: BackParams) extends Module {
   // ******************************
   //          DEPENDENCIES
   // ******************************
-  // ------------------------------
-  //              GPR
-  // ------------------------------
-  val w_rs_wait = Wire(Bool())
-  when (io.b_in.valid & m_decoder.io.o_data.s1type === OP.XREG & ~io.b_rs(0).ready) {w_rs_wait := true.B}
-  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s2type === OP.XREG & ~io.b_rs(1).ready) {w_rs_wait := true.B}
-  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s3type === OP.XREG & ~io.b_rs(1).ready) {w_rs_wait := true.B}
-  .otherwise {w_rs_wait := false.B}
+  val w_wait_rs = Wire(Bool())
+  
+  when (io.b_in.valid & m_decoder.io.o_data.s1type === OP.XREG & ~io.b_rs(0).ready) {w_wait_rs := true.B}
+  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s2type === OP.XREG & ~io.b_rs(1).ready) {w_wait_rs := true.B}
+  .elsewhen (io.b_in.valid & m_decoder.io.o_data.s3type === OP.XREG & ~io.b_rs(1).ready) {w_wait_rs := true.B}
+  .otherwise {w_wait_rs := false.B}
 
   // ******************************
   //       WAIT EMPTY PIPELINE
   // ******************************
-  val w_empty_wait = Wire(Bool())
-  w_empty_wait := io.b_in.valid & m_decoder.io.o_info.empty & io.i_pend
-
-  // ******************************
-  //             TRAP
-  // ******************************
-  val w_trap = Wire(new TrapBus(p.nAddrBit, p.nDataBit))
-
-  w_trap := m_decoder.io.o_trap
+  val w_wait_empty = Wire(Bool())
+  w_wait_empty := io.b_in.valid & m_decoder.io.o_info.empty & io.i_pend
 
   // ******************************
   //            FLUSH
@@ -258,16 +250,21 @@ class IdStage(p: BackParams) extends Module {
   } else {
     io.o_flush := io.b_in.valid & ~w_flush & ~w_wait & ~w_lock & m_decoder.io.o_trap.valid
   }
+  
+  // ******************************
+  //              HPC
+  // ******************************
+  io.o_hpc_srcdep := io.b_in.valid & w_wait_rs
 
   // ******************************
   //            OUTPUTS
   // ******************************
   // ------------------------------
-  //             BUS
+  //              BUS
   // ------------------------------
   val m_out = Module(new GenReg(p, new ExCtrlBus(p), new DataBus(p.nDataBit), false, false, true))
 
-  w_wait := io.i_end | w_rs_wait | w_empty_wait
+  w_wait := io.i_end | w_wait_rs | w_wait_empty
   w_lock := ~m_out.io.b_in.ready
 
   if (p.useField) {
@@ -283,6 +280,12 @@ class IdStage(p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.trap := m_decoder.io.o_trap
 
   m_out.io.b_in.ctrl.get.int := m_decoder.io.o_int
+  if (p.useExtB) {
+    switch (m_decoder.io.o_int.unit) {
+      is (INTUNIT.BALU)   {m_out.io.b_in.ctrl.get.int.unit := INTUNIT.ALU}
+      is (INTUNIT.CLMUL)  {m_out.io.b_in.ctrl.get.int.unit := INTUNIT.MULDIV}
+    }
+  }
   m_out.io.b_in.ctrl.get.lsu := m_decoder.io.o_lsu
   m_out.io.b_in.ctrl.get.csr := m_decoder.io.o_csr
   m_out.io.b_in.ctrl.get.gpr := m_decoder.io.o_gpr
@@ -293,15 +296,18 @@ class IdStage(p: BackParams) extends Module {
   m_out.io.b_in.ctrl.get.hpc.alu := (m_decoder.io.o_int.unit === INTUNIT.ALU)
   m_out.io.b_in.ctrl.get.hpc.ld := m_decoder.io.o_lsu.ld
   m_out.io.b_in.ctrl.get.hpc.st := m_decoder.io.o_lsu.st
-  m_out.io.b_in.ctrl.get.hpc.br := (m_decoder.io.o_int.unit === INTUNIT.BRU)
+  m_out.io.b_in.ctrl.get.hpc.bru := (m_decoder.io.o_int.unit === INTUNIT.BRU)
   m_out.io.b_in.ctrl.get.hpc.mispred := false.B
   m_out.io.b_in.ctrl.get.hpc.rdcycle := m_decoder.io.o_csr.read & (m_imm2.io.o_val(11, 0) === CSR.CYCLE.U) 
+  m_out.io.b_in.ctrl.get.hpc.jal := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JAL)
+  m_out.io.b_in.ctrl.get.hpc.jalr := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JALR)
+  m_out.io.b_in.ctrl.get.hpc.cflush := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.FLUSH)
+  m_out.io.b_in.ctrl.get.hpc.call := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JALR) & m_decoder.io.o_int.call
+  m_out.io.b_in.ctrl.get.hpc.ret := (m_decoder.io.o_int.unit === INTUNIT.BRU) & (m_decoder.io.o_int.uop === INTUOP.JALR) & m_decoder.io.o_int.ret
 
   m_out.io.b_in.data.get.s1 := m_s1_size.io.o_val
   m_out.io.b_in.data.get.s2 := m_s2_size.io.o_val
   m_out.io.b_in.data.get.s3 := m_s3_size.io.o_val  
-  m_out.io.b_in.data.get.rs1_link := (m_decoder.io.o_data.rs1 === REG.X1.U) | (m_decoder.io.o_data.rs1 === REG.X5.U)
-  m_out.io.b_in.data.get.rd_link := (m_decoder.io.o_gpr.addr === REG.X1.U) | (m_decoder.io.o_gpr.addr === REG.X5.U)
 
   io.b_out <> m_out.io.b_out
 
@@ -313,14 +319,14 @@ class IdStage(p: BackParams) extends Module {
   // ******************************
   //             STAGE
   // ******************************  
+  io.o_stop := io.b_in.valid & ~w_wait & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
+
   io.o_stage.valid := io.b_in.valid
   io.o_stage.hart := io.b_in.ctrl.get.hart
   io.o_stage.pc := io.b_in.ctrl.get.pc
   io.o_stage.instr := io.b_in.ctrl.get.instr
   io.o_stage.exc_gen := m_decoder.io.o_trap.gen
   io.o_stage.end := io.b_in.valid & m_decoder.io.o_info.end
-
-  io.o_stop := io.b_in.valid & ~w_lock & ~w_flush & m_decoder.io.o_trap.valid 
 
   // ******************************
   //             FIELD
@@ -333,6 +339,10 @@ class IdStage(p: BackParams) extends Module {
   //            DEBUG
   // ******************************
   if (p.debug) {
+    // ------------------------------
+    //            SIGNALS
+    // ------------------------------
+
     // ------------------------------
     //         DATA FOOTPRINT
     // ------------------------------

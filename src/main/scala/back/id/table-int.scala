@@ -3,7 +3,7 @@
  * Created Date: 2023-02-25 10:19:59 pm                                        *
  * Author: Mathieu Escouteloup                                                 *
  * -----                                                                       *
- * Last Modified: 2023-03-08 09:36:55 am                                       *
+ * Last Modified: 2023-04-11 12:16:52 pm                                       *
  * Modified By: Mathieu Escouteloup                                            *
  * -----                                                                       *
  * License: See LICENSE.md                                                     *
@@ -226,38 +226,38 @@ object TABLEINT32B extends TABLEINT {
     //                           |     | is Serial ? |          Gen Exc ?      |             Int Uop ?     |     |   S3 Sign  |         |       S3 Type ?    |         |
     //                           |     |     |       |   WB ?      |           |                |          |     |     |      |         |         |          |         |
     //                           |     |     |       |     |       |           |                |          |     |     |      |         |         |          |         |
-    RISCV.SH1ADD    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SH1ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SH2ADD    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SH2ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SH3ADD    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SH3ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.ANDN      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ANDN,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.ORN       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ORN,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.XNOR      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.XNOR,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.CLZ       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.CLZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.CTZ       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.CTZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.CPOP      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.CPOP,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.MAX       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.MAX,     1.B,  1.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.MAXU      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.MAX,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.MIN       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.MIN,     1.B,  1.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.MINU      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.MIN,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SEXTB     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.EXTB,    1.B,  1.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.SEXTH     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.EXTH,    1.B,  1.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.ZEXTH32   -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.EXTH,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.ROL       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ROL,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.ROR       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ROR,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.RORI      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ROR,     0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
-    RISCV.ORCB      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ORCB,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.REV832    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.REV8,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.CLMUL     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.MULDIV,   INTUOP.CLMUL,   0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.CLMULH    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.MULDIV,   INTUOP.CLMULH,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.CLMULR    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.MULDIV,   INTUOP.CLMULR,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.BCLR      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BCLR,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.BCLRI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BCLR,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
-    RISCV.BEXT      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BEXT,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.BEXTI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BEXT,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
-    RISCV.BINV      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BINV,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.BINVI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BINV,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
-    RISCV.BSET      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BSET,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.BSETI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.BSET,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X))
+    RISCV.SH1ADD    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SH1ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SH2ADD    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SH2ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SH3ADD    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SH3ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.ANDN      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ANDN,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.ORN       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ORN,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.XNOR      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.XNOR,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.CLZ       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.CLZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.CTZ       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.CTZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.CPOP      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.CPOP,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.MAX       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.MAX,     1.B,  1.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.MAXU      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.MAX,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.MIN       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.MIN,     1.B,  1.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.MINU      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.MIN,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SEXTB     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.EXTB,    1.B,  1.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.SEXTH     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.EXTH,    1.B,  1.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.ZEXTH32   -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.EXTH,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.ROL       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ROL,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.ROR       -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ROR,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.RORI      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ROR,     0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
+    RISCV.ORCB      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ORCB,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.REV832    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.REV8,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.CLMUL     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.CLMUL,    INTUOP.CLMUL,   0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.CLMULH    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.CLMUL,    INTUOP.CLMULH,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.CLMULR    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.CLMUL,    INTUOP.CLMULR,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.BCLR      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BCLR,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.BCLRI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BCLR,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
+    RISCV.BEXT      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BEXT,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.BEXTI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BEXT,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
+    RISCV.BINV      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BINV,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.BINVI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BINV,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
+    RISCV.BSET      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BSET,    0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.BSETI     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.BSET,    0.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X))
 }
 
 object TABLEINT64B extends TABLEINT {
@@ -269,19 +269,19 @@ object TABLEINT64B extends TABLEINT {
     //                           |     | is Serial ? |          Gen Exc ?      |             Int Uop ?     |     |   S3 Sign  |         |       S3 Type ?    |         |
     //                           |     |     |       |   WB ?      |           |                |          |     |     |      |         |         |          |         |
     //                           |     |     |       |     |       |           |                |          |     |     |      |         |         |          |         |
-    RISCV.ADDUW     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ADD,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SH1ADDUW  -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SH1ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SH2ADDUW  -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SH2ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SH3ADDUW  -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SH3ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.SLLIUW    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.SHL,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.CLZW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.CLZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.CTZW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.CTZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.CPOPW     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.CPOP,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.ZEXTH64   -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.EXTH,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
-    RISCV.ROLW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ROL,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.RORW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ROR,     1.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
-    RISCV.RORIW     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.ROR,     1.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
-    RISCV.REV864    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.ALU,      INTUOP.REV8,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X))
+    RISCV.ADDUW     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ADD,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SH1ADDUW  -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SH1ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SH2ADDUW  -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SH2ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SH3ADDUW  -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SH3ADD,  0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.SLLIUW    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.SHL,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.CLZW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.CLZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.CTZW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.CTZ,     0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.CPOPW     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.CPOP,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.ZEXTH64   -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.EXTH,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X),
+    RISCV.ROLW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ROL,     0.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.RORW      -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ROR,     1.B,  0.B,  0.B,  OP.XREG,  OP.XREG,  OP.X,     IMM.X,    IMM.X),
+    RISCV.RORIW     -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.ROR,     1.B,  0.B,  0.B,  OP.XREG,  OP.IMM1,  OP.X,     IMM.isI,  IMM.X),
+    RISCV.REV864    -> List(    1.B,  0.B,  0.B,    0.B,  1.B,    0.B,  INTUNIT.BALU,     INTUOP.REV8,    0.B,  0.B,  0.B,  OP.XREG,  OP.X,     OP.X,     IMM.X,    IMM.X))
 }
 
 object TABLEINTZIFENCEI extends TABLEINT {
